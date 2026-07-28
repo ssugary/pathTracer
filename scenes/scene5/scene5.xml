@@ -1,0 +1,49 @@
+<!-- ========================================== -->
+<!-- BLOCO DE CONFIGURAÇÃO (SETUP_BLOCK)        -->
+<!-- ========================================== -->
+
+<RT3>
+    <film w_res="1024" h_res="512" filename="teste_esferico.png" gamma_corrected="true" />
+
+    <lookat look_from="0 0 0" look_at="0 0 -1" vup="0 1 0" />
+
+    <camera type="spherical" mapping="equirectangular" />
+
+    <sampler type="pixel" samples_per_pixel="4" />
+    <integrator type="blinn_phong" depth="3" />
+
+    <world_begin />
+        <background type="single" color="0.1 0.1 0.1" />
+        <light_source type="ambient" i="0.2 0.2 0.2" s="1 1 1"/>
+        <light_source type="point" from="0 0 0" i="1.0 1.0 1.0" s="1 1 1"/>
+
+        <make_named_material name="MatFront" type="blinn" kd="1.0 0.2 0.2" ka="0.1 0.1 0.1" ks="0.5 0.5 0.5" glossiness="32" mirror="0 0 0" /> <!-- Vermelho -->
+        <make_named_material name="MatBack"  type="blinn" kd="0.2 0.2 1.0" ka="0.1 0.1 0.1" ks="0.5 0.5 0.5" glossiness="32" mirror="0 0 0" /> <!-- Azul -->
+        <make_named_material name="MatLeft"  type="blinn" kd="0.2 1.0 0.2" ka="0.1 0.1 0.1" ks="0.5 0.5 0.5" glossiness="32" mirror="0 0 0" /> <!-- Verde -->
+        <make_named_material name="MatRight" type="blinn" kd="1.0 1.0 0.2" ka="0.1 0.1 0.1" ks="0.5 0.5 0.5" glossiness="32" mirror="0 0 0" /> <!-- Amarelo -->
+        <make_named_material name="MatTop"   type="blinn" kd="1.0 1.0 1.0" ka="0.1 0.1 0.1" ks="0.5 0.5 0.5" glossiness="32" mirror="0 0 0" /> <!-- Branco -->
+        <make_named_material name="MatBot"   type="blinn" kd="0.5 0.5 0.5" ka="0.1 0.1 0.1" ks="0.5 0.5 0.5" glossiness="32" mirror="0 0 0" /> <!-- Cinza -->
+
+        <named_material name="MatFront" />
+        <object type="sphere" radius="2.0" center="0 0 -5" />
+
+        <named_material name="MatBack" />
+        <object type="sphere" radius="2.0" center="0 0 5" />
+
+        <named_material name="MatLeft" />
+        <object type="sphere" radius="1.5" center="-3 2.5 -3" />
+
+        <named_material name="MatRight" />
+        <object type="sphere" radius="1.5" center="3 -2.5 -3" />
+
+        <named_material name="MatTop" />
+        <object type="sphere" radius="2.0" center="0 5 0" />
+
+        <named_material name="MatBot" />
+        <object type="sphere" radius="2.0" center="0 -5 0" />
+
+        <named_material name="MatBot" />
+        <object type="plane" point="0 -2 0" normal="0 1 0" />
+    <world_end />
+
+</RT3>

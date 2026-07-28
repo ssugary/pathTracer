@@ -1,0 +1,29 @@
+<RT3>
+    <!-- The Scene -->
+    <world_begin/>
+        <!-- The Background -->
+        <!-- <background type="colors" bl="153 204 255" tl="18 10 143" tr="18 10 143" br="153 204 255" /> -->
+        <background type="4_colors" bl="0.6 0.8 1" tl="0.04 0.04 0.04" tr="0.04 0.04 0.04" br="0.6 0.8 1" />
+
+        <!-- Lights -->
+        <light_source type="directional" I="0.9 0.6 0.5" s="1 1 1" from="-5 -5 10" to="0 0 0" />
+        <light_source type="directional" I="0.9 0.9 0.9" s="1 1 1" from=" 5 -5 10" to="0 0 0" />
+
+        <!-- Material Library -->
+        <include filename="scenes/scene4/teapot_materials.xml" />
+
+        <!-- Objects -->
+        <!-- <named_material name="gold"/> -->
+        <named_material name="jade"/>
+        <object type="triangle_mesh" filename="scenes/scene4/teapot.obj" backface_cull="true" />
+
+        <named_material name="indigo"/>
+        <object type="triangle_mesh"
+                ntriangles ="2"
+                vertices="-30 30.5 -1  30 30.5 -1  30 -30.5 -1  -30 -30.5 -1"
+                indices="0 1 2   0 2 3"
+                normals ="0 0 1  0 0 1  0 0 1  0 0 1 "
+                reverse_vertex_order="true"
+                backface_cull ="false"/>
+    <world_end/>
+</RT3>
