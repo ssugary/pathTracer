@@ -13,7 +13,7 @@ namespace Geo
 
         float delta = b * b - 4.f * a * c;
 
-        if (delta < EPSILON_8) 
+        if (delta < -EPSILON_8) 
             return false;
 
         float sqr = std::sqrt(delta);
@@ -38,6 +38,8 @@ namespace Geo
 
         if (phit.x == 0 && phit.y == 0) 
             phit.x = radius * EPSILON_6;
+    
+            
 
         float phi = std::atan2(phit.y, phit.x);
 
@@ -98,21 +100,66 @@ namespace Geo
 
         return true;
     }
-    // Interaction Sphere::sample(const Point2& u, float* pdf) const 
-    // {
-    //     float z = 1.f - 2.f * u.x;
-    //     float r = std::sqrt(std::max(0.f, 1.f - z * z));
-    //     float phi = 2.f * PI * u.y;
 
-    //     Point3 pobj = Point3(r * std::cos(phi), r * std::sin(phi), z) * radius;
+    Interaction Sphere::sample(const Point2& u, float* pdf) const 
+    {
+        float z = 1.f - 2.f * u.x;
+        float r = std::sqrt(std::max(0.f, 1.f - z * z));
+        float phi = 2.f * PI * u.y;
 
-    //     Interaction it;
-    //     it.p = pobj;
-    //     it.n = static_cast<Normal3>(pobj) / radius;
-    //     *pdf = 1.f/area();
+        Point3 pObj = Point3(r * std::cos(phi), r * std::sin(phi), z) * radius;
 
-    //     return it;
-    // }
+        Interaction it;
+        it.p = pObj;
+        it.n = static_cast<Normal3>(pObj) / radius;
+
+        if (reverseOrientation)
+            it.n = -it.n;
+
+        *pdf = 1.f / area();
+
+        return it;
+    }
+
+    Interaction Sphere::sample(const Interaction& ref, const Point2& u, float* pdf) const 
+    {
+        Point3 center(0.f, 0.f, 0.f); 
+        float dc = length(ref.p - center);
+
+        if (dc - radius < EPSILON_8) 
+            return Shape::sample(ref, u, pdf);
+
+        float sinThetaMax2 = (radius * radius) / (dc * dc);
+        float cosThetaMax = std::sqrt(std::max(0.f, 1.f - sinThetaMax2));
+
+        float cosTheta = (1.f - u.x) + u.x * cosThetaMax;
+        float sinTheta = std::sqrt(std::max(0.f, 1.f - cosTheta * cosTheta));
+        float phi = u.y * 2.f * PI;
+
+        Vec3 wc = normalize(center - ref.p);
+        Vec3 wcX, wcY;
+        coordinateSystem(wc, &wcX, &wcY);
+
+        Vec3 dir = sinTheta * std::cos(phi) * wcX 
+                + sinTheta * std::sin(phi) * wcY 
+                + cosTheta * wc;
+
+        float ds = dc * cosTheta - std::sqrt(std::max(0.f, radius * radius - dc * dc * sinTheta * sinTheta));
+
+        Point3 pHit = ref.p + ds * dir;
+        Normal3 n = static_cast<Normal3>(normalize(pHit - center));
+
+        if (reverseOrientation)
+            n = -n;
+
+        Interaction it;
+        it.p = pHit;
+        it.n = n;
+
+        *pdf = 1.f / (2.f * PI * (1.f - cosThetaMax));
+
+        return it;
+    }
 
     Bounds3f Sphere::objectBound() const  
     {   

@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <vector>
 #include <memory>
+#include <iostream>
 
 namespace Prim 
 {
@@ -88,10 +89,11 @@ namespace Prim
 
                 // if(METHOD == SplitMethod::HLBVH)
                 //   root = HLBVHBuild(arena, primInfos, 0, prims.size(), &total, orderedPrims);
-                // else 
+                // else
                 root = recursiveBuild(arena, primInfos, 0, prims.size(), &total, orderedPrims);
                 prims.swap(orderedPrims);
-            };
+
+              };
 
             BVHBuildNode* recursiveBuild(MEMO::MemoryArena& arena, 
                                          std::vector<BVHPrimitiveInfo>& pInfo, 

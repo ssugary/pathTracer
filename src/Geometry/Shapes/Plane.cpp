@@ -64,4 +64,11 @@ namespace Geo
     {
         return INF;
     }
+    Interaction Plane::sample(const Point2&, float* pdf) const
+    {
+        if(pdf)
+            *pdf = 0.f;
+
+        return Interaction();
+    }
 }

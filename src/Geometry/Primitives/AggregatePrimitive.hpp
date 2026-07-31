@@ -13,9 +13,11 @@ namespace Prim
     class AggregatePrimitive : public Primitive
     {
         const std::shared_ptr<Mat::Material> getMaterial() const override
+        {            
+            return nullptr;
+        }
+        const std::shared_ptr<Luz::AreaLight> getAreaLight() const override
         {
-            //Area Light
-            
             return nullptr;
         }
     };

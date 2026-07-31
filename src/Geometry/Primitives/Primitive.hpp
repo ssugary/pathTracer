@@ -24,7 +24,7 @@ namespace Prim
             virtual bool intersect(const Geo::Ray &r, Geo::SurfaceInteraction *sf) const = 0;
             virtual bool intersectP(const Geo::Ray &r) const = 0;
             virtual const std::shared_ptr<Mat::Material> getMaterial() const = 0;
-            // virtual const Luz::AreaLight* getAreaLight() const = 0;
+            virtual const std::shared_ptr<Luz::AreaLight> getAreaLight() const = 0;
     };
 }
 

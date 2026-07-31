@@ -39,5 +39,9 @@ namespace Prim
     {
         return prim->getMaterial();
     }
+    const std::shared_ptr<Luz::AreaLight> TransformedPrimitive::getAreaLight() const 
+    {
+        return prim->getAreaLight();
+    }
 
 };

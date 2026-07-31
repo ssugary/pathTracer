@@ -16,6 +16,7 @@
 using namespace ssmath3;
 using namespace Geo;
 
+
 typedef Matrix<float, 4> Mat4;
 typedef Matrix<float, 3> Mat3;
 
@@ -239,7 +240,8 @@ static constexpr float PI = 3.14159265358979323846;
             return PI - 2 * std::sin(std::max(0.f, length(v1 + v2)/2));
         return 2 * std::sin(std::max(0.f, length(v2 - v1)/2));
     }
-    inline Vec3 SquareToSphere(const Point2& p)
+
+    inline Vec3 squareToSphere(const Point2& p)
     {
         float u = 2 * p.x - 1;
         float v = 2 * p.y - 1;
@@ -288,5 +290,49 @@ static constexpr float PI = 3.14159265358979323846;
 
         return p;
     }
+
+    inline Vec3 cosineSampleHemisphere(const Point2& u)
+    {
+        float r = std::sqrt(u.x);
+        float theta = 2.f * PI * u.y;
+
+        float x = r * std::cos(theta);
+        float y = r * std::sin(theta);
+        float z = std::sqrt(std::max(0.f, 1.f - u.x));
+
+        return Vec3(x, y, z);
+    }
+
+    inline Vec3 alignToNormal(const Vec3& local, const Normal3& n)
+    {
+        Vec3 vup = std::abs(n.z) < ONE_MINUS_EPSILON ? Vec3(1.f, 0.f, 0.f) : Vec3(0.f, 0.f, 1.f);
+        Vec3 tg = normalize(cross(vup, n));
+        Vec3 bitg = cross(tg, n);
+
+        return local.x * tg + local.y * bitg + local.z * n;
+    }
+
+    inline Point2 concentricSampleDisk(const Point2 &u) 
+    {
+        Point2 uOffset = 2.f * u - Vec2(1, 1);
+
+        if (uOffset.x == 0.f && uOffset.y == 0) 
+            return Point2(0, 0);
+
+        float theta, r;
+        if (std::abs(uOffset.x) > std::abs(uOffset.y)) 
+        {
+            r = uOffset.x;
+            theta = (PI/4) * (uOffset.y / uOffset.x);
+        } 
+        else
+        {
+            r = uOffset.y;
+            theta = (PI/2) - (PI/4) * (uOffset.x / uOffset.y);
+        }
+
+        return r * Point2(std::cos(theta), std::sin(theta));
+    }
+
 
 #endif

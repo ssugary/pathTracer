@@ -11,9 +11,9 @@ namespace Geo
         
             Point3 o{};
             Vec3   d{};
-            mutable float tMax{0.0};
-            mutable float tMin{0.0};
-            float time{0.0};
+            mutable float tMax{0.f};
+            mutable float tMin{0.f};
+            float time{0.f};
             
             const Medium* medium;
 
@@ -28,10 +28,6 @@ namespace Geo
             {
                 return o + d * t;
             }
-
-
-            
-
     };
 }
 

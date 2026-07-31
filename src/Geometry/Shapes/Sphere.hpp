@@ -26,8 +26,9 @@ namespace Geo {
             bool intersect(const Ray &r, float *tHit, SurfaceInteraction *sf, bool testAlphaTexture = true) const override;
             bool intersectP(const Ray &r, bool testAlphaTexture = true) const override;
             Bounds3f objectBound() const override;
-            // Interaction sample(const Point2& u, float* pdf) const override;
             float area() const override;
+            Interaction sample(const Point2& u, float* pdf) const override;
+            Interaction sample(const Interaction& ref, const Point2& u, float* pdf) const override;
     };
 } // namespace rt
 #endif

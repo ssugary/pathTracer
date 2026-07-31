@@ -26,6 +26,7 @@ namespace Prim
             bool intersect(const Geo::Ray &r, Geo::SurfaceInteraction *sf) const override;
             bool intersectP(const Geo::Ray &r) const override;
             Bounds3f objectBound() const override;
+            const std::shared_ptr<Luz::AreaLight> getAreaLight() const override;
 
     };
 

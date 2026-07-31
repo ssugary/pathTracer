@@ -14,10 +14,11 @@ namespace Luz
                 flag = LightFlag::AMBIENT;
             }
             Color sampleLi(const Geo::Interaction&, 
-                            // const Point2& u, 
-                            Vec3* wi, VisibilityTester*) const override
+                                    const Point2&, 
+                                    Vec3* wi, float* pdf, VisibilityTester*) const override
             {
                 *wi = {0, 0, 0};
+                *pdf = 1.0f;
                 return intensity * scale;
             }
     };

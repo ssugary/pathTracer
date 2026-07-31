@@ -52,6 +52,8 @@ namespace Geo
             void setShadingGeometry(const Vec3 &dpdus,
                                     const Vec3 &dpdvs, const Normal3 &dndus,
                                     const Normal3 &dndvs, bool orientationIsAuthoritative);
+
+            Color Le(const Vec3& dir) const;
     };
 };
 

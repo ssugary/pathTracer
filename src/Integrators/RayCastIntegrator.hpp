@@ -12,7 +12,7 @@ namespace Itg
             : SamplerIntegrator(cam, sampler, maxDepth)
             {};
 
-            std::optional<Color> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler, int depth) const override;
+            std::optional<Color> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler) const override;
             
 
     };

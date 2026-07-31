@@ -17,6 +17,7 @@ namespace Geo{
         bool intersectP(const Ray &r, bool testAlphaTexture = true) const override;
         Bounds3f objectBound() const override;
         float area() const override;
+        Interaction sample(const Point2& u, float* pdf) const override;
     };
 }
 

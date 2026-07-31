@@ -25,16 +25,16 @@ namespace Luz
             {};
 
             Color sampleLi(const Geo::Interaction& hit, 
-                            // const Point2& u, 
-                            Vec3* wi, VisibilityTester* vis) const override
+                                    const Point2&, 
+                                    Vec3* wi, float* pdf, VisibilityTester* vis) const override
             {
                 
                 Vec3 dir = from - hit.p;
                 Interaction lpos; lpos.p = from;
 
                 *vis = VisibilityTester(hit, lpos);
-
                 *wi = normalize(dir);
+                *pdf = 1.0f;
 
                 float angle = std::acos(dot(-(*wi), axis)) * (180.0 / M_PI);
 

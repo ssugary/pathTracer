@@ -15,6 +15,7 @@ namespace Luz
         DIRECTIONAL,
         AMBIENT, 
         SPOT,
+        AREA,
     };
     class Light 
     {
@@ -22,8 +23,8 @@ namespace Luz
 
             Color intensity;
             Color scale;
-            Geo::Transform lightToWorld;
-            Geo::Transform worldToLight;
+            // Geo::Transform lightToWorld;
+            // Geo::Transform worldToLight;
             
         public:
             
@@ -34,8 +35,9 @@ namespace Luz
 
             virtual ~Light() = default;
             virtual Color sampleLi(const Geo::Interaction& ref, 
-                                    // const Point2& u, 
-                                    Vec3* wi, VisibilityTester* vis) const = 0;
+                                    const Point2& u, 
+                                    Vec3* wi, float* pdf, VisibilityTester* vis) const = 0;
+
     };
 }; //< namespace Luz
 

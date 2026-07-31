@@ -14,7 +14,7 @@ namespace Itg
         return;
     }
 
-        preprocess(scene);
+        // preprocess(scene);
 
         Bounds2i bounds = camera->film->getSampleBounds();
 
@@ -37,7 +37,7 @@ namespace Itg
 
                     Ray ray = camera->generateRay(px, py);
                     
-                    auto tempL = li(ray, scene, *sampler, 0);
+                    auto tempL = li(ray, scene, *sampler);
                     auto u = float(i) / float(w);
                     auto v = 1.0f - float(j) / float(h);
 

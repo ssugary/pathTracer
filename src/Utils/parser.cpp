@@ -388,12 +388,39 @@ std::unordered_map<std::string, std::vector<std::string>> tag_catalog
          //  "color_map",
          "mirror",
      }},
+     {"emitter",
+      {
+        "type",
+        "i",
+        "s",
+        "two_sided"
+      }
+     },
+     {"make_named_emitter",
+      {
+        "name",
+        "type",
+        "i",
+        "s",
+        "two_sided"
+      }
+    },
+    {"named_emitter",
+      {
+        "name",
+      }
+    },
     {"object",
      {
          "type",
          /// Sphere
          "radius",
          "center",
+         "zmin",
+         "zmax",
+         "phimax",
+         /// Cylinder
+         "height",
          /// Plane
          "point",
          "normal",
@@ -528,6 +555,8 @@ std::unordered_map<std::string, std::function<void(const ParamSet &)>>
         {"material", API::material},     {"object", API::object},
         {"integrator", API::integrator}, {"sampler", API::sampler},
         {"make_named_material", API::makeNamedMaterial},
+        {"emitter", API::emitter}, {"make_named_emitter", API::makeNamedEmitter},
+        {"named_emitter", API::namedEmitter},
         {"named_material", API::namedMaterial}, {"light_source",
         API::lightSource},
         {"aggregator", API::aggregator}, {"translate", API::translate},
@@ -590,6 +619,8 @@ std::unordered_map<std::string, ConverterFunction> converters{
     // Object attributes
     {"radius", convert<float>},
     {"center", convert<Point3>},
+    {"phimax", convert<float>},
+    {"height",convert<float>},
 
     {"point", convert<Point3>},
     {"normal", convert<Normal3>},
@@ -628,6 +659,7 @@ std::unordered_map<std::string, ConverterFunction> converters{
     {"world_radius", convert<float>},
     {"axis", convert<Point3>},
     {"angle", convert<float>},
+    {"two_sided", convert<std::string>},
 
     // Sampler attributes
     {"samples_per_pixel", convert<int>},

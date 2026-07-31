@@ -4,7 +4,7 @@
 
 namespace Itg 
 {
-    std::optional<Color> NormalMapIntegrator::li(const Ray& ray, const Scene& scene, Sam::Sampler& ,int) const {
+    std::optional<Color> NormalMapIntegrator::li(const Ray& ray, const Scene& scene, Sam::Sampler&) const {
 
         SurfaceInteraction isect;
 

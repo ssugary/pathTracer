@@ -135,39 +135,39 @@ namespace Geo
         return true;
     }
 
-    // Interaction Triangle::sample(const Point2& u, float* pdf) const 
-    // {
-    //     float su0 = std::sqrt(u.x);
-    //     float b0 = 1.0f - su0;
-    //     float b1 = u.y * su0;
-    //     float b2 = 1.0f - b0 - b1;
+    Interaction Triangle::sample(const Point2& u, float* pdf) const 
+    {
+        float su0 = std::sqrt(u.x);
+        float b0 = 1.0f - su0;
+        float b1 = u.y * su0;
+        float b2 = 1.0f - b0 - b1;
 
-    //     auto p0 = mesh->p[v[0]];
-    //     auto p1 = mesh->p[v[1]];
-    //     auto p2 = mesh->p[v[2]];
+        auto p0 = mesh->p[v[0]];
+        auto p1 = mesh->p[v[1]];
+        auto p2 = mesh->p[v[2]];
 
-    //     Interaction it;
-    //     it.p = p0 * b0 + p1 * b1 + p2 * b2;
+        Interaction it;
+        it.p = p0 * b0 + p1 * b1 + p2 * b2;
 
-    //     if (mesh->n)
-    //     {
-    //         Normal3 n0 = mesh->n[v[0]];
-    //         Normal3 n1 = mesh->n[v[1]];
-    //         Normal3 n2 = mesh->n[v[2]];
-    //         it.n = normalize(n0 * b0 + n1 * b1 + n2 * b2);
-    //     }
-    //     else
-    //     {
-    //         it.n = normalize(static_cast<Normal3>(cross(p1 - p0, p2 - p0)));
-    //     }
+        if (mesh->n)
+        {
+            Normal3 n0 = mesh->n[v[0]];
+            Normal3 n1 = mesh->n[v[1]];
+            Normal3 n2 = mesh->n[v[2]];
+            it.n = normalize(n0 * b0 + n1 * b1 + n2 * b2);
+        }
+        else
+        {
+            it.n = normalize(static_cast<Normal3>(cross(p1 - p0, p2 - p0)));
+        }
 
-    //     if (reverseOrientation ^ tSwapHandedness)
-    //         it.n = -it.n;
+        if (reverseOrientation ^ tSwapHandedness)
+            it.n = -it.n;
 
-    //     *pdf = 1.0f / area(); 
+        *pdf = 1.0f / area(); 
 
-    //     return it;
-    // }
+        return it;
+    }
 
     Bounds3f Triangle::objectBound() const 
     {

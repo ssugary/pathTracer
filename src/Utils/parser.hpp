@@ -30,7 +30,6 @@ using ConverterFunction = std::function<bool(
 class Parser 
 {
   private:
-
   
   public:
   

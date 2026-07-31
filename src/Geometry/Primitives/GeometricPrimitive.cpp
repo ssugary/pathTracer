@@ -5,8 +5,9 @@ namespace Prim
 {
 
     GeometricPrimitive::GeometricPrimitive(std::shared_ptr<Shape> shape,
-                                std::shared_ptr<Mat::Material> material)
-    : shape(shape), material(material) {};
+                                           std::shared_ptr<Mat::Material> material,
+                                           std::shared_ptr<Luz::AreaLight> areaLight)
+    : shape(shape), material(material), areaLight(areaLight){};
 
     bool GeometricPrimitive::intersect(const Ray &r, SurfaceInteraction *sf) const 
     {
@@ -41,5 +42,9 @@ namespace Prim
         return material;
     }
     
+    const std::shared_ptr<Luz::AreaLight> GeometricPrimitive::getAreaLight() const 
+    { 
+        return areaLight;
+    }
     
 };

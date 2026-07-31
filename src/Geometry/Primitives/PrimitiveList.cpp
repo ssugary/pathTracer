@@ -44,7 +44,8 @@ namespace Prim
 
     Bounds3f PrimitiveList::objectBound() const 
 {
-    if (primitives.empty()) return Bounds3f();
+    if (primitives.empty()) 
+        return Bounds3f();
     
     Bounds3f bounds = primitives[0]->objectBound();
     

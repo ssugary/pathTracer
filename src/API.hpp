@@ -33,6 +33,7 @@ namespace Prim
 namespace Luz 
 {
   class Light;
+  class AreaLight;
 }
 namespace Mat 
 {
@@ -59,8 +60,10 @@ namespace ssrt {
 
   struct GraphicsState
   {
+    std::shared_ptr<AreaLight> curr_emitter;
     std::shared_ptr<Material> curr_material;  //!< Current material that globally affects all objects.
     std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Material>>> mats_lib;      //!< Library of materials.
+    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<AreaLight>>> emitter_lib;
     bool flip_normals{false};                 //!< When true, we flip the normals
     bool mats_lib_cloned{false};
   };
@@ -134,6 +137,9 @@ namespace ssrt {
         static void objInstanceBegin(const ParamSet&);
         static void objInstanceEnd(const ParamSet&);
         static void objInstanceCall(const ParamSet&);
+        static void emitter(const ParamSet&);
+        static void makeNamedEmitter(const ParamSet&);
+        static void namedEmitter(const ParamSet&);
         static std::shared_ptr<const Transform> cacheTransform(const Transform& t);
   };
 }; // namespace ssrt

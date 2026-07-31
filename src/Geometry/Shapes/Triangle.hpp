@@ -62,10 +62,9 @@ namespace Geo
             void getUVs(Point2 uvs[3]) const;
             bool intersect(const Ray &r, float *tHit, SurfaceInteraction *sf, bool testAlphaTexture = true) const override;
             bool intersectP(const Ray &r, bool testAlphaTexture = true) const override;
-            // Interaction sample(const Point2& u, float* pdf) const override;
             float area() const override;
             Bounds3f objectBound() const override;
-
+            Interaction sample(const Point2& u, float* pdf) const override;
     };
 }
 

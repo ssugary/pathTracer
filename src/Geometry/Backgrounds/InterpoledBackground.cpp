@@ -3,7 +3,7 @@
 
 namespace Prim 
 {
-    Color InterpoledBackground::sample(const Vec3& d, float u, float v) const
+    Color InterpoledBackground::sample(const Vec3&, float u, float v) const
     {
         const auto bottomH = ::lerp(u, colors[bl], colors[br]);
         const auto topH = ::lerp(u, colors[tl], colors[tr]);

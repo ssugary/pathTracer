@@ -24,11 +24,11 @@ namespace Luz
             };
 
             Color sampleLi(const Geo::Interaction& hit, 
-                            // const Point2& u, 
-                            Vec3* wi, VisibilityTester* vis) const override
+                                    const Point2&, 
+                                    Vec3* wi, float* pdf, VisibilityTester* vis) const override
             {
                 *wi = normalize(-dir);
-               
+                *pdf = 1.0f;
                 
                 Interaction lpos;
                 lpos.p = hit.p + (*wi) * worldRadius;

@@ -20,7 +20,7 @@ namespace Cam
             default : //< Mapping::EQUAL_AREA
             {
                 uv = wrapSquare(uv);
-                dir = SquareToSphere(uv);
+                dir = squareToSphere(uv);
                 break;
             }
         }

@@ -26,7 +26,7 @@ namespace Geo
             Scene(std::shared_ptr<AggregatePrimitive> aggregate, std::shared_ptr<Background> background, std::vector<std::shared_ptr<Luz::Light>> lights)
             : lights(lights), background(std::move(background)), aggregate(std::move(aggregate)) 
             {
-                worldBounds = aggregate->objectBound();
+                // worldBounds = this->aggregate->objectBound();
                 // for(const auto& light : lights)
                 //     light->preprocess(*this);
             };

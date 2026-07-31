@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
               << totalTime.count() << " segundos.\n";
     std::cout << "========================================\n";
     std::cout << "\n========================================\n";
-    std::cout << "Arquivo salvo em " << ro.outfile << "  \n";
+    std::cout << "Arquivo salvo em " << ssrt::API::runningOpt.outfile << "  \n";
     std::cout << "========================================\n";
 
     return EXIT_SUCCESS;

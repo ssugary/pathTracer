@@ -21,9 +21,10 @@ namespace Geo
             
             virtual bool intersectP(const Ray &r, bool testAlphaTexture = true) const;
             virtual bool intersect(const Ray &r, float *tHit, SurfaceInteraction *sf, bool testAlphaTexture = true) const = 0;
-            // virtual Interaction sample(const Point2& u, float* pdf) const = 0;
             virtual Bounds3f objectBound() const = 0;
             virtual float area() const = 0;
+            virtual Interaction sample(const Point2& u, float* pdf) const = 0;
+            virtual Interaction sample(const Interaction& ref, const Point2& u, float* pdf) const;
         };
 }
 

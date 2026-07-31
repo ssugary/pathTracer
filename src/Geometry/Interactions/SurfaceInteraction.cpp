@@ -1,5 +1,6 @@
 #include "SurfaceInteraction.hpp"
 #include "Geometry/Shapes/Shape.hpp"
+#include "Light/AreaLight.hpp"
 
 namespace Geo 
 {
@@ -40,5 +41,11 @@ namespace Geo
             shading.dpdv = dpdvs;
             shading.dndu = dndus;
             shading.dndv = dndvs;
+        }
+    
+        Color SurfaceInteraction::Le(const Vec3& dir) const
+        {
+            auto areaLight = primitive ? primitive->getAreaLight() : nullptr;
+            return areaLight ? areaLight->L(*this, dir) : Color(0.f, 0.f, 0.f);
         }
 }
