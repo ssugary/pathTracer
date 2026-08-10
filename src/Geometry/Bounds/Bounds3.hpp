@@ -1,8 +1,9 @@
+#pragma once
+
 #ifndef BOUNDS3_HPP
 #define BOUNDS3_HPP
 
 #include "ssmath3/ssmath3.hpp"
-
 
 using namespace ssmath3;
 

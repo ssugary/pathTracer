@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef PERSPECTIVE_CAMERA_HPP
 #define PERSPECTIVE_CAMERA_HPP
 

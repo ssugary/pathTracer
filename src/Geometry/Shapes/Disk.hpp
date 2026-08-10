@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef DISK_HPP
 #define DISK_HPP
 
@@ -20,7 +22,7 @@ namespace Geo
               height(height),
               radius(radius), 
               innerRadius(innerRadius),
-              phiMax(clamp(phimax, 0.0f, 360.0f)){};
+              phiMax(degToRad(clamp(phimax, 0.0f, 360.0f))){};
 
             bool intersect(const Ray &r, float *tHit, SurfaceInteraction *sf, bool testAlphaTexture = true) const override;
             bool intersectP(const Ray &r, bool testAlphaTexture = true) const override;

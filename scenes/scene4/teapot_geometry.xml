@@ -8,12 +8,12 @@
         <!-- Lights -->
         <light_source type="directional" I="0.9 0.6 0.5" s="1 1 1" from="-5 -5 10" to="0 0 0" />
         <light_source type="directional" I="0.9 0.9 0.9" s="1 1 1" from=" 5 -5 10" to="0 0 0" />
-
         <!-- Material Library -->
         <include filename="scenes/scene4/teapot_materials.xml" />
 
         <!-- Objects -->
         <!-- <named_material name="gold"/> -->
+
         <named_material name="jade"/>
         <object type="triangle_mesh" filename="scenes/scene4/teapot.obj" backface_cull="true" />
 

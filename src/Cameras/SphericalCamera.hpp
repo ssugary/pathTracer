@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SPHERICAL_CAMERA_HPP
 #define SPHERICAL_CAMERA_HPP
 

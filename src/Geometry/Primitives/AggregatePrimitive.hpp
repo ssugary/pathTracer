@@ -1,9 +1,11 @@
+#pragma once
+
+
 #ifndef AGGREGATE_PRIMITIVE_HPP
 #define AGGREGATE_PRIMITIVE_HPP
 
 #include "Materials/Material.hpp"
 #include "Primitive.hpp"
-#include <memory>
 
 using namespace Geo;
 

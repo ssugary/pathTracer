@@ -1,7 +1,8 @@
+#pragma once
+
 #ifndef TRANSFORMED_PRIMITIVE_HPP
 #define TRANSFORMED_PRIMITIVE_HPP
 
-#include "Geometry/Primitives/GeometricPrimitive.hpp"
 #include "Geometry/Primitives/Primitive.hpp"
 #include "Geometry/Transformation/Transform.hpp"
 #include "Utils/common.hpp"

@@ -84,7 +84,8 @@ namespace Geo
         Interaction it;
         it.p = pObj;
         it.n = Normal3(0.f, 0.f, 1.f);
-
+        it.pError = static_cast<float>(gamma(3)) * abs(Vec3(it.p.x, it.p.y, 0.f));
+        
         if (reverseOrientation)
             it.n = -it.n;
 

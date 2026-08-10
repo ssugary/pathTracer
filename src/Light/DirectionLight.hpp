@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef DIRECTIONAL_LIGHT_HPP
 #define DIRECTIONAL_LIGHT_HPP
 
@@ -17,14 +19,15 @@ namespace Luz
         public:
 
 
-            DirectionalLight(Color intensity, Color scale, Vec3 dir, float worldRadius)
+            DirectionalLight(std::shared_ptr<Spectrum> intensity, std::shared_ptr<Spectrum> scale, Vec3 dir, float worldRadius)
             : Light(intensity, scale), dir(dir), worldRadius(worldRadius)
             {
                 flag = LightFlag::DIRECTIONAL;
             };
 
-            Color sampleLi(const Geo::Interaction& hit, 
+            SampledSpectrum sampleLi(const Geo::Interaction& hit, 
                                     const Point2&, 
+                                    const ssrt::SampledWavelengths& lambdas,
                                     Vec3* wi, float* pdf, VisibilityTester* vis) const override
             {
                 *wi = normalize(-dir);
@@ -35,8 +38,10 @@ namespace Luz
                     
                 *vis = VisibilityTester(hit, lpos);
                 
+                SampledSpectrum I = intensity->sample(lambdas);
+                SampledSpectrum S = scale->sample(lambdas);
 
-                return intensity * scale;
+                return I * S;
             }
     };
 

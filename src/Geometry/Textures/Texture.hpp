@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef TEXTURE_HPP
 #define TEXTURE_HPP
 

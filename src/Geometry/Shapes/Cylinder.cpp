@@ -6,6 +6,10 @@ namespace Geo
     bool Cylinder::intersect(const Ray &r, float *tHit, SurfaceInteraction *sf, bool) const
     {
         float a = r.d.x * r.d.x + r.d.y * r.d.y;
+
+        if (a < EPSILON_8)  
+            return false;
+
         float b = 2.f * (r.o.x * r.d.x + r.o.y * r.d.y);
         float c = r.o.x * r.o.x + r.o.y * r.o.y - radius * radius;
         
@@ -36,8 +40,12 @@ namespace Geo
 
 
         float hitRad = std::sqrt(pHit.x * pHit.x + pHit.y * pHit.y);
+        if (hitRad < EPSILON_8)
+            return false;
+
         pHit.x *= radius / hitRad;
         pHit.y *= radius / hitRad;
+
 
         float phi = std::atan2(pHit.y, pHit.x);
 
@@ -93,6 +101,9 @@ namespace Geo
     bool Cylinder::intersectP(const Ray &r, bool) const
     {
         float a = r.d.x * r.d.x + r.d.y * r.d.y;
+
+        if (a < EPSILON_8)  
+            return false;
         float b = 2.f * (r.o.x * r.d.x + r.o.y * r.d.y);
         float c = r.o.x * r.o.x + r.o.y * r.o.y - radius * radius;
         
@@ -121,6 +132,8 @@ namespace Geo
         Point3 pHit = r(t);   
 
         float hitRad = std::sqrt(pHit.x * pHit.x + pHit.y * pHit.y);
+        if (hitRad < EPSILON_8)
+            return false;
         pHit.x *= radius / hitRad;
         pHit.y *= radius / hitRad;
 
@@ -166,19 +179,20 @@ namespace Geo
     Interaction Cylinder::sample(const Point2& u, float* pdf) const 
     {
         float z = zMin + u.x * (zMax - zMin);
-        float phi = u.y * radToDeg(phiMax);
+        float phi = u.y * phiMax;
 
         Point3 pObj(radius * std::cos(phi), radius * std::sin(phi), z);
 
         Interaction it;
         it.p = pObj;
-        it.n = normalize(Normal3(pObj.x, pObj.y, 0.f));
+        it.n = Normal3(std::cos(phi),std::sin(phi), 0.f);
+        it.pError = static_cast<float>(gamma(3)) * abs(Vec3(it.p.x, it.p.y, 0.f));
 
         if (reverseOrientation)
             it.n = -it.n;
 
         *pdf = 1.f / area();
-
+    
         return it;
     }   
 

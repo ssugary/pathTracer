@@ -1,14 +1,13 @@
+#pragma once
+
 #ifndef ANIMATED_TRANSFORM_HPP
 #define ANIMATED_TRANSFORM_HPP
 
 #include "Intervals.hpp"
 #include "Geometry/Bounds/Bounds3.hpp"
-#include "Utils/common.hpp"
-#include "Geometry/Rays/RayDifferential.hpp"
 #include "Transform.hpp"
 #include "Quaternion.hpp"
 #include <cstddef>
-#include <iterator>
 
 namespace Geo 
 {

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SHAPE_HPP 
 #define SHAPE_HPP
 

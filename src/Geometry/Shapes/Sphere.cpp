@@ -13,7 +13,7 @@ namespace Geo
 
         float delta = b * b - 4.f * a * c;
 
-        if (delta < -EPSILON_8) 
+        if (delta < EPSILON_8) 
             return false;
 
         float sqr = std::sqrt(delta);
@@ -52,13 +52,14 @@ namespace Geo
             *tHit = t0; 
 
         if (sf) {
-            sf->time = t0;
+            sf->time = r.time;
 
             float u = phi / (2.f * PI);
             float v = theta / PI;
 
             sf->uv = Point2(u, v);
-            sf->p = phit + static_cast<Vec3>(phit) * SHADOW_EPSILON;
+            sf->p = phit;
+            sf->pError = static_cast<float>(gamma(3)) * abs(Vec3(phit));
             sf->n =  Normal3(phit) / radius;
             sf->wo = -r.d;
             sf->shape = this;
@@ -155,6 +156,7 @@ namespace Geo
         Interaction it;
         it.p = pHit;
         it.n = n;
+        it.pError = static_cast<float>(gamma(3)) * abs(Vec3(pHit));
 
         *pdf = 1.f / (2.f * PI * (1.f - cosThetaMax));
 

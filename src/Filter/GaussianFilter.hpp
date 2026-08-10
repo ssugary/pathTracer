@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef GAUSSIAN_FILTER_HPP
 #define GAUSSIAN_FILTER_HPP
 

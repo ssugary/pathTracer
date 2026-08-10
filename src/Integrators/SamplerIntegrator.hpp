@@ -1,9 +1,12 @@
+#pragma once
+
 #ifndef SAMPLER_INTEGRATOR_HPP
 #define SAMPLER_INTEGRATOR_HPP
 
 #include "Cameras/Camera.hpp"
 #include "Integrator.hpp"
 #include "Sampler/Sampler.hpp"
+#include "Utils/Spectrum/Spectrum.hpp"
 #include <memory>
 #include <optional>
 
@@ -25,7 +28,7 @@ namespace Itg
             {}
 
             virtual void render(const Scene& scene) override;
-            virtual std::optional<Color> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler) const = 0;
+            virtual std::optional<SampledSpectrum> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler, ssrt::SampledWavelengths wl) const = 0;
             virtual void preprocess(const Scene&){};
     };
 

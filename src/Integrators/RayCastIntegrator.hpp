@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef RAY_CAST_INTEGRATOR_HPP
 #define RAY_CAST_INTEGRATOR_HPP
 
@@ -12,7 +14,7 @@ namespace Itg
             : SamplerIntegrator(cam, sampler, maxDepth)
             {};
 
-            std::optional<Color> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler) const override;
+            std::optional<SampledSpectrum> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler, ssrt::SampledWavelengths) const override;
             
 
     };

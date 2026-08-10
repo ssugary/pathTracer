@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
@@ -23,6 +25,7 @@ namespace Cam
 namespace Geo 
 {
   class Transform;
+  struct TransformHash;
   class Scene;
 }
 namespace Prim 
@@ -106,7 +109,7 @@ namespace ssrt {
         static std::unique_ptr<Transform> currentTM;
         
         static std::unordered_map<std::string, Transform> named_coord_sys;
-        static std::unordered_map<std::string, std::shared_ptr<const Transform>> transformation_cache;
+        static std::unordered_map<Transform, std::shared_ptr<const Transform>, TransformHash> transformation_cache;
 
         static void initEngine(const RunningOptions&);
         static bool checkState(ApiState expected_state, const std::string& tag_name);

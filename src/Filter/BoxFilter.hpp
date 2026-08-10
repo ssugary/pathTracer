@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef BOX_FILTER_HPP
 #define BOX_FILTER_HPP
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef VISIBILITY_TESTER_HPP
 #define VISIBILITY_TESTER_HPP
 

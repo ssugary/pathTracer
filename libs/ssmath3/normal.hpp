@@ -136,6 +136,8 @@ namespace ssmath3
         constexpr void normalize() noexcept 
         {
             T length = static_cast<T>(std::sqrt(x * x + y * y + z * z));
+            if(length == 0.f)
+                return;
             x /= length;
             y /= length;
             z /= length;

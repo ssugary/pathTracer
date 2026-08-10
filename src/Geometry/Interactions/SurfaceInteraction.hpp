@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SURFACE_INTERACTION_HPP
 #define SURFACE_INTERACTION_HPP
 
@@ -53,7 +55,7 @@ namespace Geo
                                     const Vec3 &dpdvs, const Normal3 &dndus,
                                     const Normal3 &dndvs, bool orientationIsAuthoritative);
 
-            Color Le(const Vec3& dir) const;
+            SampledSpectrum Le(const Vec3& dir, const ssrt::SampledWavelengths& lambdas) const;
     };
 };
 

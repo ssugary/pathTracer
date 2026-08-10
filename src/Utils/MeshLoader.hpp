@@ -1,10 +1,9 @@
+#pragma once
+
 #ifndef TRIANGLE_MESH_LOADER_HPP
 #define TRIANGLE_MESH_LOADER_HPP
 
 #include "Geometry/Shapes/Triangle.hpp"
-#include <memory>
-#include <vector>
-
 
 namespace ssrt 
 {

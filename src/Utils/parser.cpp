@@ -369,6 +369,10 @@ std::unordered_map<std::string, std::vector<std::string>> tag_catalog
      {
          "type",
          "samples_per_pixel",
+         "n_sampled_dimensions",
+         "x_samples",
+         "y_samples",
+         "jitter",
      }},
     {"lookat",  
      {
@@ -391,8 +395,8 @@ std::unordered_map<std::string, std::vector<std::string>> tag_catalog
      {"emitter",
       {
         "type",
-        "i",
         "s",
+        "i",
         "two_sided"
       }
      },
@@ -447,7 +451,7 @@ std::unordered_map<std::string, std::vector<std::string>> tag_catalog
      {
          "type",
          "depth",
-         "n_sampled_dimensions"
+        //  "n_sampled_dimensions"
          //  "mapping_interval",
          //  "n_intervals",
      }},
@@ -609,7 +613,7 @@ std::unordered_map<std::string, ConverterFunction> converters{
     {"crop_window", convert<Point4, 4>},
     {"filename", convert<std::string>},
     {"img_type", convert<std::string>},
-    {"gamma_corrected", convert<bool>},
+    {"gamma_corrected", convert<std::string>},
     // Material attributes
     {"mirror", convert<Color>},
     {"ka", convert<Color>},
@@ -663,6 +667,9 @@ std::unordered_map<std::string, ConverterFunction> converters{
 
     // Sampler attributes
     {"samples_per_pixel", convert<int>},
+    {"x_samples", convert<int>},
+    {"y_samples", convert<int>},
+    {"jitter", convert<std::string>},
 
     // Transform attributes
     {"delta", convert<Point3>},

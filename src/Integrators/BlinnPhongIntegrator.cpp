@@ -8,30 +8,23 @@
 
 namespace Itg 
 {
-    std::optional<Color> BlinnPhongIntegrator::li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler) const {
-        Color L(0.f, 0.f, 0.f);
+    std::optional<SampledSpectrum> BlinnPhongIntegrator::li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler, ssrt::SampledWavelengths lambdas) const {
+        SampledSpectrum L(0.f);
+        SampledSpectrum km(0.f);
         Ray r = ray;
         bool found{false};
-        Color km;
 
         for(int i{0}; i < maxDepth; ++i)
         {
             SurfaceInteraction isect;
 
             if(!scene.intersect(r, &isect))
-            {
-                if(found)
-                {
-                    L = L + km * scene.background->sample(r.d);
-                }
-
                 break;
-            }
             
             found = true;
             isect.n.normalize();
 
-            if (dot(r.d, isect.n) > 0) 
+            if (dot(r.d, isect.n) > 0.f) 
                 isect.n = -isect.n;
             
             std::shared_ptr<Mat::BlinnPhongMaterial> fm{nullptr};
@@ -40,8 +33,13 @@ namespace Itg
             if(!fm)
                 break;
 
-            Color ka = fm->ka();
-            km = fm->km();
+            SampledSpectrum ka(0.f);
+            if (fm->ka()) 
+                ka = fm->ka()->sample(lambdas);
+
+            km = SampledSpectrum(0.f);
+            if (fm->km()) 
+                km = fm->km()->sample(lambdas);
 
             auto n = isect.n;
             auto v = normalize(-r.d);
@@ -52,7 +50,7 @@ namespace Itg
                 Vec3 wi;
                 float pdf;
                 Point2 u = sampler.get2D();
-                auto Li =  light->sampleLi(isect, u, &wi, &pdf, &vis);
+                auto Li =  light->sampleLi(isect, u, lambdas, &wi, &pdf, &vis);
                 
                 if(light->flag == Luz::LightFlag::AMBIENT)
                 {
@@ -65,15 +63,14 @@ namespace Itg
                 
         
                 float cosThetaI = std::max(0.f, dot(n, wi));
-                if (cosThetaI <= 0.f) 
-                    continue;
+                
 
 
-                L = L + Li * fm->f(v, wi, n) * cosThetaI / pdf;
+                L = L + Li * fm->f(v, wi, n, lambdas) * cosThetaI / pdf;
             }
 
         
-            if(km.r > 0.f || km.g > 0.f || km.b > 0.f)
+            if(bool(km))
             {
                 Vec3 rd = normalize(-v + n * 2 * dot(n, v) );
                 r = isect.spawnRay(rd);                
@@ -81,6 +78,10 @@ namespace Itg
             else 
                 break;
         }
+
+        if (L.hasNaNs())
+            L = SampledSpectrum(0.f);
+
         return found ? std::optional(L) : std::nullopt;
     }
 

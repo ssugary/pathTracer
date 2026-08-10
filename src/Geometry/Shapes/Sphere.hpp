@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SPHERE_HPP
 #define SPHERE_HPP
 
@@ -21,7 +23,7 @@ namespace Geo {
                       zMax(clamp(std::max(zmin, zmax), -radius, radius)),
                       thetaMin(std::acos(clamp(zMin / radius, -1.0f, 1.0f))),
                       thetaMax(std::acos(clamp(zMax / radius, -1.0f, 1.0f))),
-                      phiMax(clamp(phimax, 0.0f, 360.0f)){};
+                      phiMax(degToRad(clamp(phimax, 0.0f, 360.0f))){};
 
             bool intersect(const Ray &r, float *tHit, SurfaceInteraction *sf, bool testAlphaTexture = true) const override;
             bool intersectP(const Ray &r, bool testAlphaTexture = true) const override;

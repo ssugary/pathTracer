@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef PIXEL_SAMPLER_HPP
 #define PIXEL_SAMPLER_HPP
 
@@ -29,7 +31,8 @@ namespace Sam
             bool setSampleNumber(int32_t sampleNum) override;
             float get1D() override;
             Point2 get2D() override;
-            std::unique_ptr<Sampler> clone(int seed) override;
+            virtual void startPixel(const Point2i& p) override;
+            virtual std::unique_ptr<Sampler> clone(int seed) override;
 
 
 

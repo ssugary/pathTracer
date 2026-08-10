@@ -8,7 +8,7 @@ namespace Geo
     {
         float dn = dot(r.d, n);
 
-        if(std::abs(dn) < 1e-6f)
+        if(std::abs(dn) < EPSILON_6)
             return false;
         
         auto w = p - r.o;
@@ -25,12 +25,12 @@ namespace Geo
 
         if(sf)
         {
-            sf->time = t;
+            sf->time = r.time;
             sf->n = dn < 0 ? n : -n;;
             
             sf->p = r(t);
+            sf->pError = static_cast<float>(gamma(3)) * abs(static_cast<Vec3>(sf->p));;
             sf->wo = -r.d;
-            
             sf->shape = this;
             
         }
@@ -41,7 +41,7 @@ namespace Geo
     {   
         float dn = dot(r.d, n);
 
-        if(std::abs(dn) < 1e-6f)
+        if(std::abs(dn) < EPSILON_6)
             return false;
         
         auto w = p - r.o;

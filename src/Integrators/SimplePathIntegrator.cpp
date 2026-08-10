@@ -2,20 +2,21 @@
 
 #include "Geometry/Interactions/SurfaceInteraction.hpp"
 #include "Materials/BlinnPhongMaterial.hpp"
+#include "Light/AreaLight.hpp"
 #include "Light/VisibilityTester.hpp"
 
 namespace Itg 
 {
-    std::optional<Color> SimplePathIntegrator::li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler) const
+    std::optional<SampledSpectrum> SimplePathIntegrator::li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler, ssrt::SampledWavelengths lambdas) const
     {
-        Color L;
-        Color tp(1.f);
+        SampledSpectrum L(0.f);
+        SampledSpectrum tp(1.f);
         bool found{false};
         Ray r = ray;
 
         for(int i{0}; i < maxDepth; ++i)
         {
-            SurfaceInteraction isect;
+            SurfaceInteraction  isect;
 
             if(!scene.intersect(r, &isect))
                 break;
@@ -25,25 +26,39 @@ namespace Itg
 
             if(dot(r.d, isect.n) > 0.f)
                 isect.n = -isect.n;
+            
+            Vec3 v = normalize(-r.d);
+            auto emission = isect.Le(v, lambdas);
 
             auto fm = std::dynamic_pointer_cast<Mat::BlinnPhongMaterial>(isect.primitive->getMaterial());
             if (!fm) 
                 break;
 
-            Vec3 v = normalize(-r.d);
-            
-            L += tp * isect.Le(-r.d);
+            if (i == 0 && bool(emission))
+            {
+                L += tp * emission;    
+            }
 
             for(auto& light : scene.lights)
             {
+                auto isectAreaLight = isect.primitive->getAreaLight();
+                if (isectAreaLight && isectAreaLight.get() == light.get())
+                    continue;
+
                 Luz::VisibilityTester vis;
                 Vec3 wi;
                 float pdf;
                 Point2 u = sampler.get2D();
-                Color Li = light->sampleLi(isect, u, &wi, &pdf, &vis);
+                auto Li = light->sampleLi(isect, u, lambdas, &wi, &pdf, &vis);
+
+                if (pdf <= SHADOW_EPSILON) 
+                    continue;
+
                 if (light->flag == Luz::LightFlag::AMBIENT)
                 {
-                    L += tp * fm->ka() * Li;
+                    if (fm->ka()) 
+                        L += tp * fm->ka()->sample(lambdas) * Li;
+
                     continue;
                 }
 
@@ -51,19 +66,26 @@ namespace Itg
                     continue;
 
                 float cosThetaI = std::max(0.f, dot(isect.n, wi));
-                if (cosThetaI <= 0.f) continue;
 
-                Color fr = fm->f(v, wi, isect.n);
+                if (cosThetaI <= EPSILON) 
+                    continue;
 
-                L += tp * fr * Li * cosThetaI / pdf;
+                
+                auto fr = fm->f(v, wi, isect.n, lambdas);
+
+                auto Lt = tp * fr * Li * cosThetaI / pdf;
+
+                
+                
+                L += Lt;
             }
 
             Vec3 wi;
             float pdf;
             Point2 u = sampler.get2D();
-            Color fr = fm->sampleF(v, isect.n, u, &wi, &pdf);
+            auto fr = fm->sampleF(v, isect.n, u, lambdas, &wi, &pdf);
         
-            if(pdf <= 0.f)
+            if(pdf <= SHADOW_EPSILON)
                 break;
 
             float cosThetaI = std::max(0.f, dot(isect.n, wi));
@@ -72,8 +94,10 @@ namespace Itg
 
             if(i > 3)
             {
-                float q = std::max(0.05f, 1.f - std::max({tp.r, tp.g, tp.b}));
-                if (sampler.get1D() < q) break;
+                float q = std::max(0.05f, 1.f - std::max({tp[0], tp[1], tp[2], tp[3]}));
+                if (sampler.get1D() < q) 
+                    break;
+
                 tp = tp / (1.f - q);
             }
         

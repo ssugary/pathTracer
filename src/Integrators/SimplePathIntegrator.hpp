@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SIMPLE_PATH_INTEGRATOR_HPP
 #define SIMPLE_PATH_INTEGRATOR_HPP
 
@@ -20,7 +22,7 @@ namespace Itg
                                  bool sampleLights, bool sampleBSDF)
             : SamplerIntegrator(cam, sampler, maxDepth), sampleLights(sampleLights), sampleBSDF(sampleBSDF) {};
 
-            std::optional<Color> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler) const override;
+            std::optional<SampledSpectrum> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler, ssrt::SampledWavelengths wl) const override;
             
 
     };

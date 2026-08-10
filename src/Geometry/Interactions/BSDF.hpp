@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef BSDF_HPP
 #define BSDF_HPP
 

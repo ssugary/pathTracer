@@ -1,8 +1,9 @@
+#pragma once
+
 #ifndef PLANE_HPP
 #define PLANE_HPP
 
 #include "Shape.hpp"
-#include <memory>
 
 namespace Geo{
     class Plane : public Shape {

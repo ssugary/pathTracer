@@ -2,11 +2,9 @@
 #define CAMERA_HPP
 
 
-#include "Geometry/Rays/Ray.hpp"
 #include "Geometry/Rays/RayDifferential.hpp"
 #include "Film.hpp"
-#include "Geometry/Transformation/AnimatedTransform.hpp"
-#include <memory>
+#include "Geometry/Transformation/Transform.hpp"
 
 using namespace Geo;
 

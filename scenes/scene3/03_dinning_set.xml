@@ -3,7 +3,7 @@
     <camera type="perspective" fovy="75" /> 
     <aggregator type="bvh" split_method="equal" max_prims_per_node="4" />
     <!-- <accelerator type="list"/> -->
-    <integrator type="blinn_phong" depth="3" />
+    <integrator type="path" depth="3" />
     <film type="image" w_res="1600" h_res="1200" filename="03_dinning_set_persp.png" img_type="png" gamma_corrected="true"/>
 
     <!-- The Scene -->

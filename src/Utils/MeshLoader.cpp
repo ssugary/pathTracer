@@ -133,10 +133,11 @@ namespace ssrt
         int channels;
         data = stbi_load(filename.c_str(), width, height, &channels, c);
     
-        if(!data) {
-        std::cerr << "ERRO STB: " << stbi_failure_reason() << " | Arquivo: " << filename << std::endl;
-        return false;
-    }
+        if(!data) 
+        {
+            std::cerr << "ERRO STB: " << stbi_failure_reason() << " | Arquivo: " << filename << std::endl;
+            return false;
+        }
 
         return true;
     }

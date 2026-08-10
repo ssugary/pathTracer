@@ -56,7 +56,7 @@ namespace Geo
         
         if (sf) 
         {
-            sf->time = t;
+            sf->time = r.time;
             
             sf->p = p0 * (1.0 - U - V) + p1 * U + p2 * V;
             
@@ -148,6 +148,9 @@ namespace Geo
 
         Interaction it;
         it.p = p0 * b0 + p1 * b1 + p2 * b2;
+
+        Point3 pAbs = abs(p0 * b0) + abs(p1 * b1) + abs(p2 * b2);
+        it.pError = SHADOW_EPSILON * static_cast<Vec3>(pAbs);
 
         if (mesh->n)
         {

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef TRANSFORM_HPP
 #define TRANSFORM_HPP
 
@@ -65,6 +67,26 @@ namespace Geo
             static Transform perspective(float fov, float n, float f);
             static Transform lookAt(const Point3& look_from, const Point3& look_at, const Vec3& vup);
 
+    };
+
+    struct TransformHash 
+    {
+        std::size_t operator()(const Transform& t) const noexcept
+        {
+            Mat4 m = t.getTMat();
+            std::size_t h = 0;
+
+            for (int i = 0; i < 4; ++i)
+            {
+                for (int j = 0; j < 4; ++j)
+                {
+                    std::size_t hi = std::hash<float>{}(m[i][j]);
+                    h ^= hi + 0x9e3779b9 + (h << 6) + (h >> 2);
+                }
+            }
+
+            return h;
+        }
     };
 }
 #endif

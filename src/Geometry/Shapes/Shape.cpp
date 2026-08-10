@@ -26,7 +26,7 @@ namespace Geo
         Vec3 wi = normalize(d);
         float cosThetaLight = std::abs(dot(it.n, -wi));
 
-        if (cosThetaLight < 1e-6f)
+        if (cosThetaLight < EPSILON_6)
         {
             *pdf = 0.f;
             return it;

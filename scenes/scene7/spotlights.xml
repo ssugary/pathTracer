@@ -37,7 +37,6 @@
         <make_named_material type="blinn" name="redish"   ka="0.6 0.6 0.6" kd ="0.9 0.2 0.1"  ks ="0.8 0.8 0.8"  glossiness ="64"/>
         <make_named_material type="blinn" name="greenish" ka="0.6 0.6 0.6" kd ="0.2 0.9 0.2"  ks ="0.8 0.8 0.8"  glossiness ="256"/>
         <make_named_material type="blinn" name="blueish"  ka="0.6 0.6 0.6" kd ="0.1 0.2 0.9"  ks ="0.8 0.8 0.8"  glossiness ="16"/>
-
         <!-- Objects -->
         <named_material name="redish"/>
         <object type="sphere" center="0 1 0" radius="1" />

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef IMAGE_HPP
 #define IMAGE_HPP
 

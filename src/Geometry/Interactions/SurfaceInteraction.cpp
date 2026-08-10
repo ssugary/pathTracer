@@ -43,9 +43,10 @@ namespace Geo
             shading.dndv = dndvs;
         }
     
-        Color SurfaceInteraction::Le(const Vec3& dir) const
+        SampledSpectrum SurfaceInteraction::Le(const Vec3& dir, const ssrt::SampledWavelengths& lambdas) const
         {
             auto areaLight = primitive ? primitive->getAreaLight() : nullptr;
-            return areaLight ? areaLight->L(*this, dir) : Color(0.f, 0.f, 0.f);
+            
+            return areaLight ? areaLight->L(*this, dir, lambdas) : SampledSpectrum(0.f);
         }
 }

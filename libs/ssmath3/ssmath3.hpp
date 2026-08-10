@@ -501,7 +501,8 @@ namespace ssmath3
     template<typename T, std::size_t L>
     inline Vector<T, L> normalize(const Vector<T, L>& v) noexcept
     {
-      return v / length(v);
+      T len = length(v);
+      return len > 0 ? v / len : v; 
     }
 
     template<typename T, std::size_t L>
@@ -1204,7 +1205,8 @@ namespace ssmath3
     template<typename T, std::size_t L>
     inline Normal<T, L> normalize(const Normal<T, L>& n) noexcept
     {
-      return n / length(n);
+      T len = length(n);
+      return len > 0 ? n / len : n; 
     }
 
     template<typename T, std::size_t L>
@@ -1429,6 +1431,12 @@ namespace ssmath3
         return Color(std::clamp(c.r, minVal, maxVal),
                      std::clamp(c.g, minVal, maxVal),
                      std::clamp(c.b, minVal, maxVal));
+    }
+    constexpr Normal<float, 3> clamp(const Normal<float, 3>& n, float minVal = 0.0f, float maxVal = std::numeric_limits<float>::infinity()) noexcept
+    {
+        return Normal<float, 3>(std::clamp(n.r, minVal, maxVal),
+                                 std::clamp(n.g, minVal, maxVal),
+                                 std::clamp(n.b, minVal, maxVal));
     }
 
     constexpr Color fromRGB8(int r, int g, int b) noexcept

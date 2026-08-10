@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef INTERPOLED_BACKGROUND_HPP
 #define INTERPOLED_BACKGROUND_HPP
 

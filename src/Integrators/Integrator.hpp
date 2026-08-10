@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef INTEGRATOR_HPP
 #define INTEGRATOR_HPP
 

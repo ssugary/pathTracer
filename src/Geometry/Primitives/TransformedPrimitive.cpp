@@ -1,4 +1,5 @@
 #include "TransformedPrimitive.hpp"
+#include "Geometry/Interactions/SurfaceInteraction.hpp"
 
 namespace Prim 
 {
@@ -19,10 +20,11 @@ namespace Prim
         if (!prim->intersect(ray, sf))
             return false;
 
-        r.tMin = ray.tMin;
-        r.tMax = ray.tMax;
+        // r.tMin = ray.tMin;
+        // r.tMax = ray.tMax;
 
         *sf = (*O2W)(*sf);
+        sf->primitive = this;
 
         return true;
 

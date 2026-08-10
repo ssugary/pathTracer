@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SINGLE_COLOR_BACKGROUND_HPP
 #define SINGLE_COLOR_BACKGROUND_HPP
 

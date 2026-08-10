@@ -19,15 +19,16 @@
 #include "Materials/BlinnPhongMaterial.hpp"
 #include "Materials/FlatMaterial.hpp"
 #include "Utils/MeshLoader.hpp"
-#include "Utils/common.hpp"
+#include "Utils/Spectrum/OtherSpectrum.hpp"
+#include "Utils/Spectrum/XYZ.hpp"
 #include "Cameras/Film.hpp"
 #include "Filter/BoxFilter.hpp"
 #include "Geometry/Transformation/Transform.hpp"
 #include "Sampler/Sampler.hpp"
-#include "Integrators/Integrator.hpp"
-#include "Integrators/SamplerIntegrator.hpp"
-#include "Integrators/BlinnPhongIntegrator.hpp"
 #include "Sampler/PixelSampler.hpp"
+#include "Sampler/StratifiedSampler.hpp"
+#include "Integrators/Integrator.hpp"
+#include "Integrators/BlinnPhongIntegrator.hpp"
 #include "MsgSystem/error.hpp"
 #include <Cameras/SphericalCamera.hpp>
 #include <Filter/GaussianFilter.hpp>
@@ -42,7 +43,7 @@ namespace ssrt
     RunningOptions API::runningOpt;
     ApiState API::apiState = ApiState::SETUP_BLOCK;
     std::unique_ptr<Transform> API::currentTM = std::make_unique<Transform>(); // Inicia com Matriz Identidade
-    std::unordered_map<std::string, std::shared_ptr<const Transform>> API::transformation_cache;
+    std::unordered_map<Transform, std::shared_ptr<const Transform>, TransformHash> API::transformation_cache;
 
     std::stack<GraphicsState> API::savedGS;
     GraphicsState API::currentGS;
@@ -232,7 +233,7 @@ namespace ssrt
             int w_res = filmPs.retrieve<int>("w_res", 800);
             int h_res = filmPs.retrieve<int>("h_res", 600);
             std::string filename = filmPs.retrieve<std::string>("filename", "output.png");
-            bool gamma_corrected = filmPs.retrieve<bool>("gamma_corrected", false);
+            std::string gamma_corrected = filmPs.retrieve<std::string>("gamma_corrected", "false");
             // float diagonal = filmPs.retrieve<float>("diagonal", 35.0); // 35mm é o padrão
             Bounds2i cropWindow(Point2i(0, 0), Point2i(1, 1));
             runningOpt.outfile = filename;
@@ -242,7 +243,11 @@ namespace ssrt
                 std::move(filter),
                 filename
             );
-            film->gammaC = gamma_corrected;
+
+            bool gc{false};
+            if(gamma_corrected == "yes" || gamma_corrected == "true")
+                gc = true;
+            film->gammaC = gc;
         } 
         else 
         {
@@ -352,20 +357,45 @@ namespace ssrt
             }
         }
 
+
+        std::shared_ptr<Sam::Sampler> sampler;
+        int spp = 1;
+
+        if(renderOpt->setup_params.count("sampler"))
+        {
+            const auto& samplerPs = renderOpt->setup_params["sampler"];
+            
+            std::string type = samplerPs.retrieve<std::string>("type", "pixel");
+            int nSampledDimensions = samplerPs.retrieve<int>("n_sampled_dimensions", 4);
+            
+            if(type == "pixel" || type == "pixel_sampler")
+            {
+                spp = samplerPs.retrieve<int>("samples_per_pixel", 1);
+                sampler = std::make_shared<PixelSampler>(spp, nSampledDimensions);
+            }
+            else if(type == "stratified" || type == "stratified_sampler" || type == "ssampler")
+            {
+                int x_samples = samplerPs.retrieve<int>("x_samples", 1);
+                int y_samples = samplerPs.retrieve<int>("y_samples", 1);
+                std::string jitter = samplerPs.retrieve<std::string>("jitter", "false");
+
+                bool jt{false};
+                if(jitter == "true" || jitter == "yes")
+                    jt = true;
+
+                sampler = std::make_shared<StratifiedSampler>(x_samples, y_samples, jt, nSampledDimensions);
+            }
+        }
+        else 
+            {
+                sampler = std::make_shared<PixelSampler>(spp, 1); //< default :p
+            }
+
         if (renderOpt->setup_params.count("integrator")) 
         {
             const auto& itgPs = renderOpt->setup_params["integrator"];
             std::string type = itgPs.retrieve<std::string>("type", "blinn_phong");
-            int spp = 1;
-            if (renderOpt->setup_params.count("sampler")) 
-            {
-                const auto& samplerPs = renderOpt->setup_params["sampler"];
-                spp = samplerPs.retrieve<int>("samples_per_pixel", 1);
-            }
-            int maxDepth = itgPs.retrieve<int>("depth", 5);
-            int nSampledDimensions = itgPs.retrieve<int>("n_sampled_dimensions", 4);
-
-            auto sampler = std::make_shared<PixelSampler>(spp, nSampledDimensions);
+            int maxDepth = itgPs.retrieve<int>("depth", 1);
 
             if (type == "blinn_phong" || type == "blinn") 
             {
@@ -401,7 +431,6 @@ namespace ssrt
         std::cout << "[API] Finalizando carregamento. Primitivas na cena: " 
                   << renderOpt->elements.size() << "\n";
 
-        // 1. Construir a estrutura de aceleração (Lista ou BVH)
         std::shared_ptr<AggregatePrimitive> aggregate;
         if (renderOpt->aggregator == AggregateType::LIST) 
         {
@@ -409,10 +438,10 @@ namespace ssrt
         } 
         else 
         {
-            /*TODO: BVH*/
             auto maxPrimsPerNode = ps.retrieve<int>("max_prims_per_node", 4);
             aggregate = std::make_shared<BVHAccel>(renderOpt->elements, maxPrimsPerNode);
         }
+        
         
         renderOpt->scene = std::make_unique<Scene>(
             aggregate, 
@@ -494,17 +523,26 @@ namespace ssrt
         std::shared_ptr<Material> mat;
         if(type == "blinn_phong" || type == "blinn")
         {
-            auto kd = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
-            auto ks = ps.retrieve<Color>("ks", Color(0.0, 0.0, 0.0));
-            auto ka = ps.retrieve<Color>("ka", Color(0.0, 0.0, 0.0));
-            auto mirror = ps.retrieve<Color>("mirror", Color(0.0, 0.0, 0.0));
+            auto kd_rgb = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
+            auto ks_rgb= ps.retrieve<Color>("ks", Color(0.0, 0.0, 0.0));
+            auto ka_rgb= ps.retrieve<Color>("ka", Color(0.0, 0.0, 0.0));
+            auto mirror_rgb = ps.retrieve<Color>("mirror", Color(0.0, 0.0, 0.0));
             auto glossiness= ps.retrieve<float>("glossiness", 0);
+
+            auto kd = std::make_shared<RGBAlbedoSpectrum>(kd_rgb);
+            auto ks = std::make_shared<RGBAlbedoSpectrum>(ks_rgb);
+            auto ka = std::make_shared<RGBAlbedoSpectrum>(ka_rgb);
+            auto mirror = std::make_shared<RGBAlbedoSpectrum>(mirror_rgb);
+
             mat = std::make_shared<BlinnPhongMaterial>(kd, ks, ka, glossiness, mirror);
         }
         else if(type == "flat")
         {
-            auto color = ps.retrieve<Color>("color", {0.f});
-            auto mirror = ps.retrieve<Color>("mirror", {0.f});
+            auto color_rgb = ps.retrieve<Color>("color", {0.f});
+            auto mirror_rgb = ps.retrieve<Color>("mirror", {0.f});
+
+            auto color = std::make_shared<RGBAlbedoSpectrum>(color_rgb);
+            auto mirror = std::make_shared<RGBAlbedoSpectrum>(mirror_rgb);
             mat = std::make_shared<FlatMaterial>(color, mirror);
         }
 
@@ -525,17 +563,27 @@ namespace ssrt
         std::shared_ptr<Material> mat;
         if(type == "blinn_phong" || type == "blinn")
         {
-            auto kd = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
-            auto ks = ps.retrieve<Color>("ks", Color(0.0, 0.0, 0.0));
-            auto ka = ps.retrieve<Color>("ka", Color(0.0, 0.0, 0.0));
-            auto mirror = ps.retrieve<Color>("mirror", Color(0.0, 0.0, 0.0));
+            auto kd_rgb = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
+            auto ks_rgb= ps.retrieve<Color>("ks", Color(0.0, 0.0, 0.0));
+            auto ka_rgb= ps.retrieve<Color>("ka", Color(0.0, 0.0, 0.0));
+            auto mirror_rgb = ps.retrieve<Color>("mirror", Color(0.0, 0.0, 0.0));
             auto glossiness= ps.retrieve<float>("glossiness", 0);
+
+            auto kd = std::make_shared<RGBAlbedoSpectrum>(kd_rgb);
+            auto ks = std::make_shared<RGBAlbedoSpectrum>(ks_rgb);
+            auto ka = std::make_shared<RGBAlbedoSpectrum>(ka_rgb);
+            auto mirror = std::make_shared<RGBAlbedoSpectrum>(mirror_rgb);
+
             mat = std::make_shared<BlinnPhongMaterial>(kd, ks, ka, glossiness, mirror);
         }
         else if(type == "flat")
         {
-            auto color = ps.retrieve<Color>("color", {0.f});
-            auto mirror = ps.retrieve<Color>("mirror", {0.f});
+            auto color_rgb = ps.retrieve<Color>("color", {0.f});
+            auto mirror_rgb = ps.retrieve<Color>("mirror", {0.f});
+
+            auto color = std::make_shared<RGBAlbedoSpectrum>(color_rgb);
+            auto mirror = std::make_shared<RGBAlbedoSpectrum>(mirror_rgb);
+
             mat = std::make_shared<FlatMaterial>(color, mirror);
         }
 
@@ -570,15 +618,12 @@ namespace ssrt
         std::string type = ps.retrieve<std::string>("type", "sphere");
         std::shared_ptr<Primitive> localPrimitive = nullptr;
         std::shared_ptr<Primitive> newPrimitive = nullptr;
-        std::shared_ptr<AreaLight> emitter;
+        std::shared_ptr<AreaLight> base_emitter = currentGS.curr_emitter;
         if (!currentGS.curr_material) 
         {
             ERROR("No declared material");
         }
-        if (!currentGS.curr_emitter) 
-        {
-            emitter = nullptr;
-        }
+     
 
         if(type == "sphere")
         {
@@ -587,17 +632,21 @@ namespace ssrt
             auto zmin = ps.retrieve<float>("zmin", -radius);
             auto zmax = ps.retrieve<float>("zmax", radius);
             auto phimax = ps.retrieve<float>("phimax", 360.f);
-            auto shape = std::make_shared<Sphere>(radius, zmin, zmax, degToRad(phimax), false, false);
+            auto shape = std::make_shared<Sphere>(radius, zmin, zmax, phimax, false, false);
             
-            if(emitter)
-                emitter->shape = shape;
-            
-            localPrimitive = std::make_shared<GeometricPrimitive>(shape, currentGS.curr_material, emitter);
-
-
             Transform objTM = (*currentTM)(Transform::translate(center));
             auto o2w = cacheTransform(objTM);
             auto w2o = cacheTransform(Transform::inverse(objTM));
+            std::shared_ptr<AreaLight> localEmitter = nullptr;
+            if(base_emitter) 
+            {
+                localEmitter = base_emitter->clone();
+                localEmitter->shape = shape;
+                localEmitter->O2W = o2w;
+                localEmitter->W2O = w2o;
+            }
+
+            localPrimitive = std::make_shared<GeometricPrimitive>(shape, currentGS.curr_material, localEmitter);
             newPrimitive = std::make_shared<TransformedPrimitive>(o2w.get(), w2o.get(), localPrimitive);
 
         }
@@ -615,16 +664,20 @@ namespace ssrt
             }
             
             auto phimax = ps.retrieve<float>("phimax", 360.f);
-            auto shape = std::make_shared<Cylinder>(radius, zmin, zmax, degToRad(phimax), false, false);
-
-            if(emitter)
-                emitter->shape = shape;
-
-            localPrimitive = std::make_shared<GeometricPrimitive>(shape, currentGS.curr_material, emitter);
-
+            auto shape = std::make_shared<Cylinder>(radius, zmin, zmax, phimax, false, false);
+            
             Transform objTM = (*currentTM)(Transform::translate(center));
             auto o2w = cacheTransform(objTM);
             auto w2o = cacheTransform(Transform::inverse(objTM));
+            std::shared_ptr<AreaLight> localEmitter = nullptr;
+            if(base_emitter) 
+            {
+                localEmitter = base_emitter->clone();
+                localEmitter->shape = shape;
+                localEmitter->O2W = o2w;
+                localEmitter->W2O = w2o;
+            }
+            localPrimitive = std::make_shared<GeometricPrimitive>(shape, currentGS.curr_material, localEmitter);
             newPrimitive = std::make_shared<TransformedPrimitive>(o2w.get(), w2o.get(), localPrimitive);
         }
         else if (type == "plane")
@@ -632,13 +685,11 @@ namespace ssrt
             auto point = ps.retrieve<Point3>("point");
             auto normal = ps.retrieve<Normal3>("normal");
             auto shape = std::make_shared<Plane>(point, normal, false, false);
-            if(emitter)
-                emitter->shape = shape;
-
-            localPrimitive = std::make_shared<GeometricPrimitive>(shape, currentGS.curr_material, emitter);
+            
             auto o2w = cacheTransform(*currentTM);
             auto w2o = cacheTransform(Transform::inverse(*currentTM));
-
+            
+            localPrimitive = std::make_shared<GeometricPrimitive>(shape, currentGS.curr_material);
             newPrimitive = std::make_shared<TransformedPrimitive>(o2w.get(), w2o.get(), localPrimitive);
         }
         else if (type == "triangle_mesh" || type == "trianglemesh")
@@ -647,20 +698,25 @@ namespace ssrt
             std::string cull_str      = ps.retrieve<std::string>("backface_cull", "false");
             bool reverse_order        = (rev_order_str == "true");
             bool swap_handedness      = (cull_str == "true");
-
+            auto o2w = cacheTransform(*currentTM);
+            auto w2o = cacheTransform(Transform::inverse(*currentTM));
             std::string filename = ps.retrieve<std::string>("filename", "");
 
-            // Vetor temporário para guardar os triângulos antes de ir para a BVH
             std::vector<std::shared_ptr<Primitive>> meshPrimitives;
             
             if (!filename.empty()) 
             {
                 auto triangles = loadOBJ(filename, reverse_order, swap_handedness);
-                if(emitter)
-                        emitter->shape = triangles[0];
                 for (auto& tri : triangles) 
                 {
-                    meshPrimitives.push_back(std::make_shared<GeometricPrimitive>(tri, currentGS.curr_material, emitter));
+                    std::shared_ptr<AreaLight> localEmitter = nullptr;
+                    if(base_emitter) {
+                        localEmitter = base_emitter->clone();
+                        localEmitter->shape = tri;
+                        localEmitter->O2W = o2w;
+                        localEmitter->W2O = w2o;
+                    }
+                    meshPrimitives.push_back(std::make_shared<GeometricPrimitive>(tri, currentGS.curr_material, localEmitter));
                 }
             }
             else 
@@ -693,23 +749,25 @@ namespace ssrt
                     for (int i = 0; i < ntriangles; ++i) 
                     {
                         auto tri = std::make_shared<Triangle>(reverse_order, swap_handedness, mesh, i);
-                        meshPrimitives.push_back(std::make_shared<GeometricPrimitive>(tri, currentGS.curr_material, emitter));
+                        std::shared_ptr<AreaLight> localEmitter = nullptr;
+                        if(base_emitter) 
+                        {
+                            localEmitter = base_emitter->clone();
+                            localEmitter->shape = tri;
+                            localEmitter->O2W = o2w;
+                            localEmitter->W2O = w2o;
+                        }
+                        meshPrimitives.push_back(std::make_shared<GeometricPrimitive>(tri, currentGS.curr_material, localEmitter));
                     }
-                    if(emitter)
-                        emitter->shape = std::make_shared<Triangle>(reverse_order, swap_handedness, mesh, 0);
                 }
             }
             if (!meshPrimitives.empty()) 
                 {
                     auto bvh = std::make_shared<BVHAccel>(meshPrimitives, 4);
-                    
-                    auto o2w = cacheTransform(*currentTM);
-                    auto w2o = cacheTransform(Transform::inverse(*currentTM));
-
                     newPrimitive = std::make_shared<TransformedPrimitive>(o2w.get(), w2o.get(), bvh);
                 }
             }
-
+            
         if (newPrimitive) 
         {
             if (renderOpt->curr_instance) 
@@ -717,6 +775,9 @@ namespace ssrt
             else 
                 renderOpt->elements.push_back(newPrimitive);
             
+
+            if(newPrimitive->getAreaLight())
+                renderOpt->light_sources.push_back(newPrimitive->getAreaLight());
         }
     }
 
@@ -729,8 +790,12 @@ namespace ssrt
 
         std::string type = ps.retrieve<std::string>("type", "point");
         std::shared_ptr<Light> light = nullptr;
-        auto scale = ps.retrieve<Color>("s", {0, 0, 0});
-        auto intensity = ps.retrieve<Color>("i", {0, 0, 0});
+        auto scale_rgb = ps.retrieve<Color>("s", {0, 0, 0});
+        auto intensity_rgb = ps.retrieve<Color>("i", {0, 0, 0});
+
+        auto scale = std::make_shared<RGBIlluminationSpectrum>(scale_rgb);
+        auto intensity = std::make_shared<RGBIlluminationSpectrum>(intensity_rgb);
+
         if(type == "ambient")
         {
             light = std::make_shared<AmbientLight>(intensity, scale);
@@ -783,8 +848,11 @@ namespace ssrt
 
         if(type == "diffuse" || type == "diff")
         {
-            auto scale = ps.retrieve<Color>("s", {0, 0, 0});
-            auto intensity = ps.retrieve<Color>("i", {0, 0, 0});
+            auto scale_rgb = ps.retrieve<Color>("s", {0, 0, 0});
+            auto intensity_rgb = ps.retrieve<Color>("i", {0, 0, 0});
+
+            auto scale = std::make_shared<RGBIlluminationSpectrum>(scale_rgb);
+            auto intensity = std::make_shared<RGBIlluminationSpectrum>(intensity_rgb);
             auto two_sided = ps.retrieve<std::string>("two_sided", "false");
             bool ts = false;
             if(two_sided == "yes" || two_sided == "true")
@@ -811,8 +879,11 @@ namespace ssrt
 
         if(type == "diffuse")
         {
-            auto scale = ps.retrieve<Color>("s", {0, 0, 0});
-            auto intensity = ps.retrieve<Color>("i", {0, 0, 0});
+            auto scale_rgb = ps.retrieve<Color>("s", {0, 0, 0});
+            auto intensity_rgb = ps.retrieve<Color>("i", {0, 0, 0});
+
+            auto scale = std::make_shared<RGBIlluminationSpectrum>(scale_rgb);
+            auto intensity = std::make_shared<RGBIlluminationSpectrum>(intensity_rgb);
             auto two_sided = ps.retrieve<std::string>("two_sided", "false");
             bool ts = false;
             if(two_sided == "yes" || two_sided == "true")
@@ -925,12 +996,13 @@ namespace ssrt
     std::shared_ptr<const Transform> API::cacheTransform(const Transform& t) 
     {
 
-        std::string key = t.toString(); 
+        auto it = transformation_cache.find(t);
+        if (it != transformation_cache.end())
+            return it->second;
 
-        if (transformation_cache.find(key) == transformation_cache.end()) 
-            transformation_cache[key] = std::make_shared<const Transform>(t);
+        auto cached = std::make_shared<const Transform>(t);
+        transformation_cache[t] = cached;
         
-
-        return transformation_cache[key];
+        return cached;
     }
 };

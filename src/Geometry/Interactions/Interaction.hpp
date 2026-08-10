@@ -1,8 +1,8 @@
+#pragma once
+
 #ifndef INTERACTION_HPP
 #define INTERACTION_HPP
 
-#include "Utils/common.hpp"
-#include "Geometry/Medium/Medium.hpp"
 #include "Geometry/Rays/Ray.hpp"
 
 namespace Geo{
@@ -35,12 +35,13 @@ namespace Geo{
             }
             Ray spawnRayTo(const Point3 &p2) const {
 
-                float dist = distance(p2, p);
-                Vec3 dir = (p2 - p) / dist;
+                float realDist = distance(p2, p);
+
+                Vec3 dir = (realDist > 0.f) ? ((p2 - p) / realDist) : (Vec3(0.f));
 
                 Point3 origin = isSurfaceInteraction() ? offsetRayOrigin(p, pError, n, dir) : p;
-
-                return Ray(origin, dir, SHADOW_EPSILON, dist - SHADOW_EPSILON, time);
+                float tMax = (realDist > SHADOW_EPSILON) ? (realDist - SHADOW_EPSILON) : 0.f;
+                return Ray(origin, dir, SHADOW_EPSILON, tMax, time);
             }
 
             Ray spawnRayTo(const Interaction &it) const 

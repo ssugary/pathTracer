@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef UNIFORM_LIGHT_SAMPLER_HPP
 #define UNIFORM_LIGHT_SAMPLER_HPP
 

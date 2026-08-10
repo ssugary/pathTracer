@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
@@ -47,9 +49,12 @@ static constexpr float MAX_FLOAT = std::numeric_limits<float>::max();
 static constexpr float INF = std::numeric_limits<float>::infinity();
 static constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 static constexpr float ONE_MINUS_EPSILON = 1 - EPSILON;
+static constexpr float EPSILON_9 = 1e-9f;
 static constexpr float EPSILON_8 = 1e-8f;
 static constexpr float EPSILON_6 = 1e-6f;
+static constexpr float EPSILON_3 = 1e-3f;
 static constexpr float SHADOW_EPSILON = 1e-4f;
+static constexpr float ONE_MINUS_SHADOW_EPSILON = 1 - SHADOW_EPSILON;
 static constexpr float PI = 3.14159265358979323846;
 
    struct CameraSample
@@ -132,7 +137,6 @@ static constexpr float PI = 3.14159265358979323846;
         float d = dot(abs(n), pError);
         if (d == 0.0f) 
             d = SHADOW_EPSILON; 
-    
 
         Vec3 offset = d * static_cast<Vec3>(n);
         
@@ -293,7 +297,7 @@ static constexpr float PI = 3.14159265358979323846;
 
     inline Vec3 cosineSampleHemisphere(const Point2& u)
     {
-        float r = std::sqrt(u.x);
+        float r = std::sqrt(std::max(0.f, u.x));
         float theta = 2.f * PI * u.y;
 
         float x = r * std::cos(theta);
@@ -305,7 +309,7 @@ static constexpr float PI = 3.14159265358979323846;
 
     inline Vec3 alignToNormal(const Vec3& local, const Normal3& n)
     {
-        Vec3 vup = std::abs(n.z) < ONE_MINUS_EPSILON ? Vec3(1.f, 0.f, 0.f) : Vec3(0.f, 0.f, 1.f);
+        Vec3 vup = std::abs(n.z) < ONE_MINUS_SHADOW_EPSILON ? Vec3(0.f, 0.f, 1.f) : Vec3(1.f, 0.f, 0.f);
         Vec3 tg = normalize(cross(vup, n));
         Vec3 bitg = cross(tg, n);
 
@@ -334,5 +338,17 @@ static constexpr float PI = 3.14159265358979323846;
         return r * Point2(std::cos(theta), std::sin(theta));
     }
 
+    inline float planck(float lambda, float t)
+    {   
+        if(t <= 0)
+            return 0.f;
+        const float c = 299792458.f;
+        const float h = 6.62606957e-34f;
+        const float kb = 1.3806488e-23f;
+
+        float l = lambda * EPSILON_9;
+        float Le = (2.f * h * c * c) / (std::pow(l, 5) * (std::exp((h * c) / (l * kb * t)) - 1));
+        return Le;
+    }
 
 #endif

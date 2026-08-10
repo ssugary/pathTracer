@@ -1,14 +1,13 @@
+#pragma once
+
 #ifndef FILM_HPP
 #define FILM_HPP
 
-#include "Utils/common.hpp"
-#include "Filter/Filter.hpp"
-#include <cmath>
-#include <iostream>
-#include <memory>
-#include <mutex>
-#include <stdatomic.h>
 #include "ImageIO.hpp"
+#include "Filter/Filter.hpp"
+
+#include <cmath>
+#include <memory>
 
 namespace Cam 
 {
@@ -30,7 +29,8 @@ namespace Cam
           std::unique_ptr<Fil::Filter> filter;
           const std::string filename;
           Bounds2i croppedPixelBounds;
-          bool gammaC{false};
+
+          bool gammaC{false}; 
 
           ~Film() = default;
           Film(const Point2i& res, const Bounds2i& cropWindow, 
@@ -114,9 +114,20 @@ namespace Cam
                 Pixel& p = getPixel(Point2i{i, j});
                 Color finalColor = p.colorSum;
               
-                if (p.filterWeightSum > 0.0) 
+                if (p.filterWeightSum > 0.f) 
                     finalColor = finalColor / p.filterWeightSum;
                 
+                
+                finalColor.r = std::max(0.f, finalColor.r);
+                finalColor.g = std::max(0.f, finalColor.g);
+                finalColor.b = std::max(0.f, finalColor.b);
+
+                // float maxColor = std::max({finalColor.r, finalColor.g, finalColor.b});
+                // float scale = 1.0f / (maxColor + 1.0f);
+
+                // finalColor.r *= scale;
+                // finalColor.g *= scale;
+                // finalColor.b *= scale;
                 
                 colorBuffer.push_back(finalColor);
               }

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef ORTHOGRAPHIC_CAMERA_HPP
 #define ORTHOGRAPHIC_CAMERA_HPP
 

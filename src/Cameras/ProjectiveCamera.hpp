@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef PROJECTIVE_CAMERA_HPP
 #define PROJECTIVE_CAMERA_HPP 
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef RANDOM_NUMBER_GENERATOR_HPP
 #define RANDOM_NUMBER_GENERATOR_HPP
 

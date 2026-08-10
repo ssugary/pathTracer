@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef POINT_LIGHT_HPP
 #define POINT_LIGHT_HPP
 
@@ -16,14 +18,15 @@ namespace Luz
 
         public:
 
-            PointLight(Color intensity, Color scale, Point3 pos, Vec3 attenuation)
+            PointLight(std::shared_ptr<Spectrum> intensity, std::shared_ptr<Spectrum> scale, Point3 pos, Vec3 attenuation)
             : Light(intensity, scale), pos(pos), attenuation(attenuation)
             {
                 flag = LightFlag::POINT;
             };
 
-            Color sampleLi(const Geo::Interaction& hit, 
+            SampledSpectrum sampleLi(const Geo::Interaction& hit, 
                                     const Point2&, 
+                                    const ssrt::SampledWavelengths& lambdas,
                                     Vec3* wi, float* pdf, VisibilityTester* vis) const override
             {
                Vec3 dir = pos - hit.p;
@@ -35,7 +38,10 @@ namespace Luz
 
                float att = 1.0f / (attenuation[0] + dist * attenuation[1] + dist * dist * attenuation[2]);
 
-               return intensity * scale * att;
+               SampledSpectrum I = intensity->sample(lambdas);
+               SampledSpectrum S = scale->sample(lambdas);
+
+               return I * S * att;
 
             }
     };

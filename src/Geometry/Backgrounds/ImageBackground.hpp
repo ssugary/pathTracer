@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef IMAGE_BACKGROUND_HPP
 #define IMAGE_BACKGROUND_HPP
 

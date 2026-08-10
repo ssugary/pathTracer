@@ -1,14 +1,13 @@
+#pragma once
+
+
 #ifndef BVH_ACCEL_HPP
 #define BVH_ACCEL_HPP
 
 #include "Geometry/Primitives/AggregatePrimitive.hpp"
-#include "Geometry/Primitives/Primitive.hpp"
 #include "Utils/Memory.hpp"
-#include "Utils/common.hpp"
-#include <cstddef>
+
 #include <vector>
-#include <memory>
-#include <iostream>
 
 namespace Prim 
 {

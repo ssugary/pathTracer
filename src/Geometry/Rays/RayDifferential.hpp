@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef RAY_DIFFERENTIAL_HPP
 #define RAY_DIFFERENTIAL_HPP
 

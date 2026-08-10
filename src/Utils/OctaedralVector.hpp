@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef OCTAEDRAL_VECTOR_HPP
 #define OCTAEDRAL_VECTOR_HPP
 

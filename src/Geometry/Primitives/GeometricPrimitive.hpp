@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef GEOMETRIC_PRIMITIVE_HPP
 #define GEOMETRIC_PRIMITIVE_HPP
 

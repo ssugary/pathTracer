@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef MEDIUM_HPP
 #define MEDIUM_HPP
 

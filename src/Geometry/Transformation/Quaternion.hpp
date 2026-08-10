@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef QUATErNION_HPP
 #define QUATErNION_HPP
 

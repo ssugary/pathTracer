@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SAMPLER_HPP 
 #define SAMPLER_HPP
 

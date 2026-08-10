@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef PRIMITIVE_LIST_HPP
 #define PRIMITIVE_LIST_HPP
 

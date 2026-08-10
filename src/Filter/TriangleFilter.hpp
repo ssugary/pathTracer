@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef TRIANGLE_FILTER_HPP
 #define TRIANGLE_FILTER_HPP
 

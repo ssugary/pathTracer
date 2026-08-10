@@ -1,9 +1,11 @@
+#pragma once
+
 #ifndef INTERVALS_HPP
 #define INTERVALS_HPP
 
 #include <algorithm>
 #include <cmath>
-#include "Utils/common.hpp"
+
 namespace Geo 
 {
     class Interval 

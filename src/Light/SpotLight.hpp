@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SPOT_LIGHT_HPP
 #define SPOT_LIGHT_HPP
 
@@ -20,12 +22,15 @@ namespace Luz
         public:
 
 
-            SpotLight(Color intensity, Color scale, Point3 from, Point3 to, float cutoff, float fallof)
+            SpotLight(std::shared_ptr<Spectrum> intensity, std::shared_ptr<Spectrum> scale, Point3 from, Point3 to, float cutoff, float fallof)
             : Light(intensity, scale), from(from), axis(::normalize(to - from)), cutoff(cutoff), falloff(fallof)
-            {};
+            {
+                this->flag = LightFlag::SPOT;
+            };
 
-            Color sampleLi(const Geo::Interaction& hit, 
+            SampledSpectrum sampleLi(const Geo::Interaction& hit, 
                                     const Point2&, 
+                                    const ssrt::SampledWavelengths& lambdas,
                                     Vec3* wi, float* pdf, VisibilityTester* vis) const override
             {
                 
@@ -42,14 +47,17 @@ namespace Luz
 
                 if(angle >= cutoff)
                 {
-                    return Color();
+                    return SampledSpectrum(0.f);
                 }
                 else if(angle >= falloff)
                 {
                     spot = (cutoff - angle) / (cutoff - falloff);
-                }                
+                }           
+                
+                SampledSpectrum I = intensity->sample(lambdas);
+                SampledSpectrum S = scale->sample(lambdas);
 
-                return intensity * scale * spot;
+                return I * S * spot;
             }
     };
 
