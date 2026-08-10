@@ -61,13 +61,19 @@ namespace ssrt
     BlackbodySpectrum::BlackbodySpectrum(float t)
     : t(t)
     {
-        float lambdaMax = 2.8977721e-3f / t;
-        normalizationFactor = 1.f / ::planck(lambdaMax, t);
+        // lambdaMax from Wien's displacement law is in meters
+        float lambdaMax_m = 2.8977721e-3f / t;
+        // planck() expects wavelength in nanometers (it multiplies by 1e-9 internally),
+        // so convert meters -> nanometers before calling it.
+        float lambdaMax_nm = lambdaMax_m / EPSILON_9;
+        normalizationFactor = 1.f / ::planck(lambdaMax_nm, t);
     }
 
     float BlackbodySpectrum::operator()(float lambda) const 
     {
-        return ::planck(lambda * EPSILON_9, t) * normalizationFactor;
+        // lambda is passed around in nanometers in the renderer, and planck()
+        // converts from nm -> m internally, so pass lambda directly.
+        return ::planck(lambda, t) * normalizationFactor;
     }
 
     RGBAlbedoSpectrum::RGBAlbedoSpectrum(const Color& rgb)
