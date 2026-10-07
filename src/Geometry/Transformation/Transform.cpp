@@ -5,11 +5,7 @@
 #include <string>
 
 namespace Geo 
-{
-    inline float gamma(int n) {
-        float epsilon = std::numeric_limits<float>::epsilon() * 0.5;
-        return (n * epsilon) / (1.0 - n * epsilon);
-    }   
+{ 
 
     Transform::Transform() : transMat(), invTransMat() {};
     Transform::Transform(const Mat4& m) : transMat(m), invTransMat(::inverse(transMat)) {};
@@ -63,21 +59,45 @@ namespace Geo
     {
         return static_cast<Normal3>(::transpose(invTransMat) * static_cast<Normal4>(n));
     }
-    Ray Transform::operator()(const Ray& r) const
+    Ray Transform::operator()(const Ray& r, float* tMax) const
     {
         Vec3 error;
         auto o = (*this) (r.o, &error);
         auto d =   (*this) (r.d);
-        float sqrL = sqrLength(d);
+        
         float tmax = r.tMax;
+
+        if(tMax)
+            tmax = *tMax;
+
+        float sqrL = sqrLength(d);
         if(sqrL > 0)
         {
             float dt = dot(abs(d), error) / sqrL;
             o += d * dt;
-            tmax -= dt;
+                tmax -= dt;
         }
-        
+
+        if(tMax)
+            *tMax = tmax;
+
         return Ray(o, d, r.tMin, tmax, r.time, r.medium);
+    }
+
+    RayDifferential Transform::operator()(const RayDifferential& r, float* tMax) const
+    {
+        Ray tr = (*this)(Ray(r), tMax);
+        
+        RayDifferential ret(tr.o, tr.d, tr.tMin, tr.tMax, tr.time, tr.medium);
+        ret.hasDifferentials = r.hasDifferentials;
+        if (r.hasDifferentials) 
+        {
+            ret.rxOrigin    = (*this)(r.rxOrigin);
+            ret.ryOrigin    = (*this)(r.ryOrigin);
+            ret.rxDirection = (*this)(r.rxDirection);
+            ret.ryDirection = (*this)(r.ryDirection);
+        }
+        return ret;
     }
 
     Bounds3f Transform::operator()(const Bounds3f& b) const
@@ -316,6 +336,36 @@ namespace Geo
 
 
         return Transform(cameraToWorld, ::inverse(cameraToWorld));
+    }
+
+    Point3 boyerLindquistToCartesian(const Point4& x, float spin) 
+    {
+        float r     = x.y; //< radial coord
+        float theta = x.z; //< polar angle
+        float phi   = x.w; //< azimutal angle
+
+        float sinTheta = std::sin(theta);
+        float cosTheta = std::cos(theta);
+        float sinPhi   = std::sin(phi);
+        float cosPhi   = std::cos(phi);
+
+        float R = std::sqrt(r * r + spin * spin);
+
+
+        return Point3(R * sinTheta * cosPhi, R * sinTheta * sinPhi, r * cosTheta);
+    }
+
+    Point3 transformToLocal3d(const Point4& xSpacetime, 
+                                     const Point4& centerSpacetime, 
+                                     float spin,
+                                     const Transform& localFrameBasis) 
+    {
+        Point3 pGlobal = boyerLindquistToCartesian(xSpacetime, spin);
+        Point3 pCenter = boyerLindquistToCartesian(centerSpacetime, spin);
+
+        Point3 deltaP = static_cast<Point3>(pGlobal - pCenter);
+
+        return Transform::transpose(localFrameBasis)(deltaP);
     }
 
 }

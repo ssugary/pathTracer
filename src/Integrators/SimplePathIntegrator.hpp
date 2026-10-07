@@ -14,7 +14,7 @@ namespace Itg
         
             bool sampleLights;
             bool sampleBSDF;
-            // Sam::UniformLightSampler lightSampler;
+            Sam::UniformLightSampler lightSampler;
 
         public:
 
@@ -22,8 +22,8 @@ namespace Itg
                                  bool sampleLights, bool sampleBSDF)
             : SamplerIntegrator(cam, sampler, maxDepth), sampleLights(sampleLights), sampleBSDF(sampleBSDF) {};
 
-            std::optional<SampledSpectrum> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler, ssrt::SampledWavelengths wl) const override;
-            
+            std::optional<Color> li(const RayDifferential& ray, const Scene& scene, Sam::Sampler& sampler) const override;
+            void preprocess(const Scene&) override;
 
     };
 

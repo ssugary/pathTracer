@@ -63,6 +63,10 @@ namespace ssmath3
         {
             return Color(r + c.r, g + c.g, b + c.b);
         }
+        constexpr Color operator-(const Color &c) const noexcept
+        {
+            return Color(r - c.r, g - c.g, b - c.b);
+        }
 
         constexpr Color& operator+=(const Color &c) noexcept
         {
@@ -83,6 +87,11 @@ namespace ssmath3
             g *= c.g; 
             b *= c.b;
             return *this;
+        }
+
+        constexpr Color operator/(const Color &c) const noexcept
+        {            
+            return Color(r / c.r, g / c.g, b / c.b);
         }
 
         constexpr Color operator*(float s) const 

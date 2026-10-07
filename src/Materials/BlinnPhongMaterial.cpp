@@ -1,61 +1,47 @@
 #include "BlinnPhongMaterial.hpp"
+#include <Geometry/Textures/Texture.hpp>
+
 
 namespace Mat 
 {
 
-    SampledSpectrum BlinnPhongMaterial::f(const Vec3& wo, const Vec3& wi, const Normal3& n, const ssrt::SampledWavelengths& lambdas) const
+    Color BlinnPhongMaterial::f(const SurfaceInteraction& si, const Vec3& wo, const Vec3& wi) const
     {
-        Vec3 h = normalize(wo + wi);
-
-        SampledSpectrum diffuseColor{0.f};
-    
-        if(diffuse) 
-            diffuseColor = diffuse->sample(lambdas) / PI;
-        
-        SampledSpectrum spec{0.f};
-
-        if(dot(n, wi) > 0.f && glossiness > 0.f)
-        {
-            spec = specular->sample(lambdas) * std::pow(std::max(0.f, dot(n, h)), glossiness);
-        }
-
-        return diffuseColor + spec;
-
+        return computeBSDF(si)->f(wo, wi);
     }
-    SampledSpectrum BlinnPhongMaterial::sampleF(const Vec3& wo, const Normal3& n, const Point2& u, const ssrt::SampledWavelengths& lambdas,
-                                                Vec3* wi, float* pdf) const 
+    Color BlinnPhongMaterial::sampleF(const SurfaceInteraction& si, const Vec3& wo, const Point2& u,
+                                    Vec3* wi, float* pdf) const 
     {
-        SampledSpectrum m{0.f};
-        if(mirror) 
-            m = mirror->sample(lambdas);
+        return computeBSDF(si)->sampleF(wo, u, wi, pdf);
+    }
+    float BlinnPhongMaterial::pdf(const SurfaceInteraction& si, const Vec3& wo, const Vec3& wi) const 
+    {
+        return computeBSDF(si)->pdf(wo, wi);
+    }
 
-        bool isMirror = (bool)m;
+    std::shared_ptr<BSDF> BlinnPhongMaterial::computeBSDF(const SurfaceInteraction& si) const
+    {
+    
+        Normal3 ns = Geo::applyNormalMap(si, nullptr);
 
-        if (isMirror)
-        {
-            *wi = normalize(-wo + 2.f * dot(wo, n) * n);
-            
-            float cosThetaI = dot(n, *wi);
-
-            if (cosThetaI <= SHADOW_EPSILON) 
-            {
-                *pdf = 0.f;
-                return SampledSpectrum(0.f); 
-            }
-
-            *pdf = 1.0f;
-
-            return m / cosThetaI;
-        }
+        auto bsdf = std::make_shared<BSDF>(ns);
         
-        Vec3 local = cosineSampleHemisphere(u);
-        *wi = alignToNormal(local, n);
-        *pdf = std::max(0.f, dot(n, *wi)) / PI;
+        bool hasDiffuse  = diffuse.r  > 0.f || diffuse.g  > 0.f || diffuse.b  > 0.f;
+        bool hasSpecular = specular.r > 0.f || specular.g > 0.f || specular.b > 0.f;
+        bool hasMirror   = mirror.r   > 0.f || mirror.g   > 0.f || mirror.b   > 0.f;
 
-        if(*pdf <= SHADOW_EPSILON)
-            return SampledSpectrum(0.f);
-
-        return f(wo, *wi, n, lambdas);
+        if(hasMirror && !hasDiffuse)
+            bsdf->add(std::make_shared<SpecularReflection>(mirror));
+        else
+        {
+            if(hasDiffuse)  
+                bsdf->add(std::make_shared<LambertianReflection>(diffuse));
+            if(hasSpecular && glossiness > 0.f) 
+                bsdf->add(std::make_shared<BlinnPhongSpecular>(specular, glossiness));
+        }
+    
+        
+        return bsdf;
     }
 
 };

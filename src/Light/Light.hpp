@@ -1,12 +1,8 @@
-#pragma once
-
 #ifndef LIGHT_HPP
 #define LIGHT_HPP
 
 #include "Geometry/Interactions/Interaction.hpp"
-#include "Utils/Spectrum/Spectrum.hpp"
-
-#include <memory>
+#include "Utils/common.hpp"
 
 namespace Luz 
 {
@@ -18,14 +14,15 @@ namespace Luz
         DIRECTIONAL,
         AMBIENT, 
         SPOT,
+        ENVIRONMENT,
         AREA,
     };
     class Light 
     {
         protected:
 
-            std::shared_ptr<Spectrum> intensity;
-            std::shared_ptr<Spectrum> scale;
+            Color intensity;
+            Color scale;
             // Geo::Transform lightToWorld;
             // Geo::Transform worldToLight;
             
@@ -33,14 +30,14 @@ namespace Luz
             
             LightFlag flag;
 
-            Light(std::shared_ptr<Spectrum> intensity, std::shared_ptr<Spectrum> scale)
+            Light(const Color& intensity, const Color& scale)
             : intensity(intensity), scale(scale) {};
 
             virtual ~Light() = default;
-            virtual SampledSpectrum sampleLi(const Geo::Interaction& ref, 
+            virtual Color sampleLi(const Geo::Interaction& ref, 
                                     const Point2& u, 
-                                    const ssrt::SampledWavelengths& lambdas,
                                     Vec3* wi, float* pdf, VisibilityTester* vis) const = 0;
+            virtual float pdf(const Geo::Interaction& ref, const Vec3& wi) const = 0;
 
     };
 }; //< namespace Luz

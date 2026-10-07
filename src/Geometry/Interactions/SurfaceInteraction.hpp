@@ -3,10 +3,11 @@
 #ifndef SURFACE_INTERACTION_HPP
 #define SURFACE_INTERACTION_HPP
 
-#include "BSDF.hpp"
+
+#include "Materials/BSDF.hpp"
 #include "Interaction.hpp"
 #include "Geometry/Primitives/Primitive.hpp"
-
+#include "Geometry/Rays/RayDifferential.hpp"
 
 using namespace Prim;
 
@@ -41,8 +42,8 @@ namespace Geo
             mutable float dudy = 0;
             mutable float dvdy = 0;
 
-            BSDF *bsdf = nullptr;
-            BSSRDF *bssrdf = nullptr;
+            Mat::BSDF *bsdf = nullptr;
+            Mat::BSSRDF *bssrdf = nullptr;
 
             SurfaceInteraction() = default;
             SurfaceInteraction(const SurfaceInteraction&) = default;
@@ -55,7 +56,8 @@ namespace Geo
                                     const Vec3 &dpdvs, const Normal3 &dndus,
                                     const Normal3 &dndvs, bool orientationIsAuthoritative);
 
-            SampledSpectrum Le(const Vec3& dir, const ssrt::SampledWavelengths& lambdas) const;
+            Color Le(const Vec3& dir) const;
+            void computeDifferentials(const RayDifferential& ray) const;
     };
 };
 

@@ -24,9 +24,9 @@ namespace Prim
 
         int index = (y * width + x) * 3;
 
-        unsigned char r = data[index + 0];
-        unsigned char g = data[index + 1];
-        unsigned char b = data[index + 2];
+        unsigned char r = data.get()[index + 0];
+        unsigned char g = data.get()[index + 1];
+        unsigned char b = data.get()[index + 2];
 
         return Color(r/255.f, g/255.f,b/255.f);
     };

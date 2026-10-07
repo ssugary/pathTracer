@@ -95,6 +95,12 @@ namespace Geo
             sf->time = r.time;
             sf->pError = pError;
             sf->shape = this;
+            sf->dpdu = Vec3(-phiMax * pHit.y, phiMax * pHit.x, 0.f);;
+            sf->dpdv = Vec3(0.f, 0.f, zMax - zMin);
+
+            sf->shading.n = sf->n;
+            sf->shading.dpdu = sf->dpdu;
+            sf->shading.dpdv = sf->dpdv;
         }
         return true;
     }

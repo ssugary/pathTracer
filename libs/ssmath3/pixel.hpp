@@ -11,7 +11,7 @@ namespace ssmath3
     struct Pixel 
     {
         Color colorSum{0.f, 0.f, 0.f};
-        float filterWeightSum;
+        float filterWeightSum{0.f};
         float colorVariance{0.f};
         
         Color albedoSum{0.f, 0.f, 0.f};

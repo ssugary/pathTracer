@@ -23,8 +23,31 @@ namespace Cam
         RayDifferential ray(Point3(0, 0, 0), normalize(static_cast<Vec3>(camPos)));
         
         /*TODO offsets of Perspective Camera*/
-        // ray.time = ::lerp(cs.time, shutterOpen, shutterClose);
+        if(lensR > 0)
+        {
+            Vec3 dxr = ::normalize(static_cast<Vec3>(camPos + dx));
+            Vec3 dyr = ::normalize(static_cast<Vec3>(camPos + dy));
+            float ft = focalD / dxr.z;
+            Point3 focus = Point3(0.f) + (ft * dxr);
+            ray.rxOrigin = ray.o;
+            ray.rxDirection = normalize(focus - ray.rxOrigin); 
+            
+            ft = focalD / dyr.z;
+            focus = Point3(0.f) + (ft * dyr);
+            ray.ryOrigin = ray.o;
+            ray.ryDirection = normalize(focus - ray.ryOrigin);
+        }
+        else 
+        {
+            // ray.time = lerp(cs.time, shutterOpen, shutterClose);
+            ray.rxOrigin = ray.o;
+            ray.ryOrigin = ray.o;
+            ray.rxDirection = normalize(static_cast<Vec3>(camPos + dx));
+            ray.ryDirection = normalize(static_cast<Vec3>(camPos + dy));
+        }
+
         ray.medium = medium;
+        ray.hasDifferentials = true;
 
         return (*C2W)(ray);
     }   

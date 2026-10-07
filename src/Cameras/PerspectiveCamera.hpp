@@ -26,8 +26,8 @@ namespace Cam
                             film, medium, shutterOpen, shutterClose, 
                             lensR, focalD)
                               {
-                                dx = R2C(Vec3(1, 0, 0)) - R2C(Vec3(0, 0, 0));
-                                dy = R2C(Vec3(0, 1, 0)) - R2C(Vec3(0, 0, 0));
+                                dx = R2C(Point3(1, 0, 0)) - R2C(Point3(0, 0, 0));
+                                dy = R2C(Point3(0, 1, 0)) - R2C(Point3(0, 0, 0));
                               };
           
         virtual Ray generateRay(/*const CameraSample&*/ int x, int y) const override;

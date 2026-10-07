@@ -18,6 +18,7 @@
 using namespace ssmath3;
 using namespace Geo;
 
+using ssmath::Array2D;
 
 typedef Matrix<float, 4> Mat4;
 typedef Matrix<float, 3> Mat3;
@@ -55,7 +56,8 @@ static constexpr float EPSILON_6 = 1e-6f;
 static constexpr float EPSILON_3 = 1e-3f;
 static constexpr float SHADOW_EPSILON = 1e-4f;
 static constexpr float ONE_MINUS_SHADOW_EPSILON = 1 - SHADOW_EPSILON;
-static constexpr float PI = 3.14159265358979323846;
+static constexpr float PI =          3.14159265358979323846;
+static constexpr float PI_OVER_TWO = 1.57079632679489661923;
 
    struct CameraSample
    {
@@ -92,6 +94,34 @@ static constexpr float PI = 3.14159265358979323846;
     rgb[2] =  0.055648f*xyz[0] - 0.204043f*xyz[1] + 1.057311f*xyz[2];
   }
 
+  inline uint64_t multiplicativeInverse(int64_t a, int64_t n) 
+  {
+    int64_t t = 0, newt = 1;
+    int64_t r = n, newr = a;
+
+    while (newr != 0) 
+    {
+        int64_t quotient = r / newr;
+        
+        int64_t tmp_t = t;
+        t = newt;
+        newt = tmp_t - quotient * newt;
+        
+        int64_t tmp_r = r;
+        r = newr;
+        newr = tmp_r - quotient * newr;
+    }
+
+    if (r > 1) 
+        return 0; 
+    
+
+    if (t < 0) 
+        t += n;
+    
+
+    return (uint64_t)t;
+  }
 
   inline float nextFloatUp(float v) 
     {
@@ -131,10 +161,29 @@ static constexpr float PI = 3.14159265358979323846;
         return v;
     }
 
+    
+
+    inline bool refract(const Vec3& wi, const Normal3& n, float eta, Vec3* wt)
+    {
+        float cosThetaI = dot(n, wi);
+        float sin2ThetaI = std::max(0.f, 1.f - cosThetaI * cosThetaI);
+        float sin2ThetaT = eta * eta * sin2ThetaI;
+
+        if (sin2ThetaT >= 1.f) 
+            return false; 
+
+        float cosThetaT = std::sqrt(1.f - sin2ThetaT);
+
+        *wt = -eta * wi + (eta * cosThetaI - cosThetaT) * static_cast<Vec3>(n);
+
+        return true;
+    }
+
     inline Point3 offsetRayOrigin(const Point3 &p, const Vec3 &pError,
                                   const Normal3 &n, const Vec3 &w) 
     {
         float d = dot(abs(n), pError);
+
         if (d == 0.0f) 
             d = SHADOW_EPSILON; 
 
@@ -155,6 +204,24 @@ static constexpr float PI = 3.14159265358979323846;
 
         return po;
     }
+
+    inline float computeUt(float r, float omega, float M, float a) 
+    {
+        float r2 = r * r;
+        float a2 = a * a;
+
+        float gtt  = -(1.f - (2.f * M) / r);
+        float gtph = -(2.f * M * a) / r;
+        float gphph = r2 + a2 + (2.f * M * a2) / r;
+
+        float denom = -(gtt + 2.f * omega * gtph + omega * omega * gphph);
+
+        if (denom <= 0.f) 
+            return 1.f;
+
+        return 1.f / std::sqrt(denom);
+    }
+
 
     inline float sphericalTriangleArea(const Vec3& a, const Vec3& b, const Vec3& c) 
     {
@@ -184,10 +251,14 @@ static constexpr float PI = 3.14159265358979323846;
                     clamp(cosT, -1, 1));
     }
 
-    inline Vec3 sphericalPhi(const Vec3& v)
+    inline float sphericalPhi(const Vec3& v)
     {
         float p = std::atan2(v.y, v.x);
         return p < 0 ? p + 2 * PI : p;
+    }
+    inline float sphericalTheta(const Vec3& v)
+    {
+        return std::acos(std::clamp(v.z, -1.f, 1.f));
     }
     inline float cosTheta(const Vec3 w)
     {
@@ -227,6 +298,14 @@ static constexpr float PI = 3.14159265358979323846;
         float sin = sinTheta(w);
         return sin == 0 ? 1 : clamp(w.x / sin, -1, 1);
     }
+    inline float cos2Phi(const Vec3& w)
+    {
+        return cosPhi(w) * cosPhi(w);
+    }
+    inline float sin2Phi(const Vec3& w)
+    {
+        return sinPhi(w) * sinPhi(w);
+    }
     inline float cosDeltaPhi(const Vec3& wa, const Vec3& wb)
     {
         float dxya = wa.x * wa.x + wa.y * wa.y;
@@ -241,9 +320,16 @@ static constexpr float PI = 3.14159265358979323846;
     inline float angle(const Vec3& v1, const Vec3& v2)
     {
         if(dot(v1, v2) < 0)
-            return PI - 2 * std::sin(std::max(0.f, length(v1 + v2)/2));
-        return 2 * std::sin(std::max(0.f, length(v2 - v1)/2));
+            return PI - 2 * std::asin(std::max(0.f, length(v1 + v2)/2));
+        return 2 * std::asin(std::max(0.f, length(v2 - v1)/2));
     }
+
+    inline float gamma(int n) 
+    {
+        float epsilon = EPSILON * 0.5;
+
+        return (n * epsilon) / (1.0 - n * epsilon);
+    }  
 
     inline Vec3 squareToSphere(const Point2& p)
     {
@@ -307,13 +393,21 @@ static constexpr float PI = 3.14159265358979323846;
         return Vec3(x, y, z);
     }
 
+    inline bool sameHemisphere(const Vec3& w1, const Vec3& w2)
+    {
+        return w1.z * w2.z > 0.f;
+    }
+
     inline Vec3 alignToNormal(const Vec3& local, const Normal3& n)
     {
-        Vec3 vup = std::abs(n.z) < ONE_MINUS_SHADOW_EPSILON ? Vec3(0.f, 0.f, 1.f) : Vec3(1.f, 0.f, 0.f);
-        Vec3 tg = normalize(cross(vup, n));
-        Vec3 bitg = cross(tg, n);
+        Vec3 w = normalize(static_cast<Vec3>(n));
 
-        return local.x * tg + local.y * bitg + local.z * n;
+        Vec3 vup = std::abs(w.z) < ONE_MINUS_SHADOW_EPSILON ? Vec3(0.f, 0.f, 1.f) : Vec3(1.f, 0.f, 0.f);
+
+        Vec3 u = normalize(cross(vup, w));
+        Vec3 v = cross(w, u);
+
+        return local.x * u + local.y * v + local.z * w;
     }
 
     inline Point2 concentricSampleDisk(const Point2 &u) 

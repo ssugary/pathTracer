@@ -54,11 +54,12 @@ namespace Geo
         private:
 
             std::shared_ptr<TriangleMesh> mesh;
+            bool backfaceCull;
             const int *v;
 
         public:
 
-            Triangle(bool reverseOrientation, bool tSwapHandedness, 
+            Triangle(bool reverseOrientation, bool tSwapHandedness, bool backfaceCull,
                      const std::shared_ptr<TriangleMesh> &mesh, int triNumber);
             
             void getUVs(Point2 uvs[3]) const;

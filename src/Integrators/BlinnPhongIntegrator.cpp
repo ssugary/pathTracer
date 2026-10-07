@@ -8,23 +8,31 @@
 
 namespace Itg 
 {
-    std::optional<SampledSpectrum> BlinnPhongIntegrator::li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler, ssrt::SampledWavelengths lambdas) const {
-        SampledSpectrum L(0.f);
-        SampledSpectrum km(0.f);
-        Ray r = ray;
+    std::optional<Color> BlinnPhongIntegrator::li(const RayDifferential& ray, const Scene& scene, Sam::Sampler& sampler) const {
+        Color L;
+        RayDifferential r = ray;
         bool found{false};
+        Color km;
 
         for(int i{0}; i < maxDepth; ++i)
         {
             SurfaceInteraction isect;
-
-            if(!scene.intersect(r, &isect))
-                break;
             
-            found = true;
-            isect.n.normalize();
+            found = scene.intersect(r, &isect);
 
-            if (dot(r.d, isect.n) > 0.f) 
+            if(!found)
+            {
+                if(i != 0)
+                    L = L + km * scene.background->sample(::normalize(r.d));
+                else  
+                    return std::nullopt;                    
+                break;
+            }
+            
+            isect.n.normalize();
+            isect.computeDifferentials(r);
+
+            if (dot(r.d, isect.n) > 0) 
                 isect.n = -isect.n;
             
             std::shared_ptr<Mat::BlinnPhongMaterial> fm{nullptr};
@@ -33,24 +41,20 @@ namespace Itg
             if(!fm)
                 break;
 
-            SampledSpectrum ka(0.f);
-            if (fm->ka()) 
-                ka = fm->ka()->sample(lambdas);
-
-            km = SampledSpectrum(0.f);
-            if (fm->km()) 
-                km = fm->km()->sample(lambdas);
+            Color ka = fm->ka();
+            km = fm->km();
+            
 
             auto n = isect.n;
             auto v = normalize(-r.d);
 
-            for(auto& light : scene.lights)
+            for(auto& light : scene.lights.get())
             {
                 Luz::VisibilityTester vis;
                 Vec3 wi;
                 float pdf;
                 Point2 u = sampler.get2D();
-                auto Li =  light->sampleLi(isect, u, lambdas, &wi, &pdf, &vis);
+                auto Li =  light->sampleLi(isect, u, &wi, &pdf, &vis);
                 
                 if(light->flag == Luz::LightFlag::AMBIENT)
                 {
@@ -60,29 +64,24 @@ namespace Itg
 
                 if(!vis.unoccluded(scene))
                     continue;
-                
-        
-                float cosThetaI = std::max(0.f, dot(n, wi));
-                
 
-
-                L = L + Li * fm->f(v, wi, n, lambdas) * cosThetaI / pdf;
+                
+                L = L + Li * fm->f(isect, v, wi);
             }
 
         
-            if(bool(km))
+            if(km.r > 0.f || km.g > 0.f || km.b > 0.f)
             {
                 Vec3 rd = normalize(-v + n * 2 * dot(n, v) );
                 r = isect.spawnRay(rd);                
             }
             else 
                 break;
+
         }
-
-        if (L.hasNaNs())
-            L = SampledSpectrum(0.f);
-
-        return found ? std::optional(L) : std::nullopt;
+            
+        
+        return std::optional(L);
     }
 
 };

@@ -36,12 +36,12 @@ namespace Geo
 
         Point3 phit = r(t0);   
 
-        if (phit.x == 0 && phit.y == 0) 
-            phit.x = radius * EPSILON_6;
+        float phiX = phit.x;
+        float phiY = phit.y;
+        if (phiX == 0.f && phiY == 0.f) 
+            phiX = radius * EPSILON_6;
     
-            
-
-        float phi = std::atan2(phit.y, phit.x);
+        float phi = std::atan2(phiY, phiX);
 
         if(phi < 0)
             phi += 2 * PI;
@@ -61,9 +61,24 @@ namespace Geo
             sf->p = phit;
             sf->pError = static_cast<float>(gamma(3)) * abs(Vec3(phit));
             sf->n =  Normal3(phit) / radius;
+            sf->n = reverseOrientation ? -sf->n : sf->n;
             sf->wo = -r.d;
             sf->shape = this;
 
+            float zRadius = std::sqrt(phit.x * phit.x + phit.y * phit.y);
+            float invZRadius = zRadius > 0.f ? 1.f / zRadius : 0.f;
+            float cosPhi = phit.x * invZRadius;
+            float sinPhi = phit.y * invZRadius;
+
+            float theta = sf->uv.y * PI;
+
+            sf->dpdu = Vec3(-2.f * PI * phit.y, 2.f * PI * phit.x, 0.f);;
+            sf->dpdv = PI * Vec3(phit.z * cosPhi, phit.z * sinPhi, -radius * std::sin(theta));
+
+            sf->shading.n = sf->n;
+            sf->shading.dpdu = sf->dpdu;
+            sf->shading.dpdv = sf->dpdv;
+            
         }
 
         return true;
@@ -172,5 +187,25 @@ namespace Geo
     float Sphere::area() const
     {
         return phiMax * radius * (zMax - zMin); 
+    }
+    float Sphere::pdf(const Interaction& ref, const Vec3& wi) const
+    {
+        Point3 center(0.f, 0.f, 0.f); 
+        float dc = length(ref.p - center);
+        
+        if(dc - radius < EPSILON_8)
+            return Shape::pdf(ref, wi);
+
+        Ray r = ref.spawnRay(wi);
+
+        if(!this->intersectP(r))
+            return 0.f;
+
+        float sinThetaMax2 = (radius * radius) / (dc * dc);
+        float cosThetaMax = std::sqrt(std::max(0.f, 1.f - sinThetaMax2));
+
+        return 1.f/(2.f * PI * (1.f - cosThetaMax));
+
+
     }
 }

@@ -4,13 +4,13 @@ namespace Sam
 {
     void PixelSampler::startPixel(const Point2i& p) 
     {
-        for (std::size_t i = 0; i < samples1D.size(); ++i) {
-            for (std::size_t j = 0; j < samples1D[i].size(); ++j) {
+        for (std::size_t i{0}; i < samples1D.size(); ++i) {
+            for (std::size_t j{0}; j < samples1D[i].size(); ++j) {
                 samples1D[i][j] = rng.uniformFloat();
             }
         }
-        for (std::size_t i = 0; i < samples2D.size(); ++i) {
-            for (std::size_t j = 0; j < samples2D[i].size(); ++j) {
+        for (std::size_t i{0}; i < samples2D.size(); ++i) {
+            for (std::size_t j{0}; j < samples2D[i].size(); ++j) {
                 samples2D[i][j] = Point2(rng.uniformFloat(), rng.uniformFloat());
             }
         }
@@ -25,7 +25,7 @@ namespace Sam
         return Sampler::startNextSample();
     }
 
-    bool PixelSampler::setSampleNumber(int32_t sampleNum)
+    bool PixelSampler::setSampleNumber(int64_t sampleNum)
     {
         current1DDimension = 0;
         current2DDimension = 0;
@@ -45,8 +45,8 @@ namespace Sam
     Point2 PixelSampler::get2D()
     {
         if (current2DDimension < samples2D.size() && 
-        !samples2D[current2DDimension].empty() && 
-        static_cast<float>(currentPixIndex) < samples2D[current2DDimension].size()) 
+            !samples2D[current2DDimension].empty() && 
+            static_cast<float>(currentPixIndex) < samples2D[current2DDimension].size()) 
         {
             return samples2D[current2DDimension++][currentPixIndex];
         }

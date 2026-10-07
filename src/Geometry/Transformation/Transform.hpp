@@ -4,7 +4,7 @@
 #define TRANSFORM_HPP
 
 #include "Utils/common.hpp"
-#include "Geometry/Rays/Ray.hpp"
+#include "Geometry/Rays/RayDifferential.hpp"
 
 namespace Geo 
 {
@@ -37,10 +37,11 @@ namespace Geo
             Vec3                  operator()(const Vec3& p)                       const;
             Vec4                  operator()(const Vec4& p)                       const;
             Normal3               operator()(const Normal3& p)                    const;
-            Ray                   operator()(const Ray& r)                        const;
             Bounds3f              operator()(const Bounds3f& b)                   const;
             SurfaceInteraction    operator()(const SurfaceInteraction& s)         const;
             Transform             operator()(const Transform& t)                  const;
+            Ray                   operator()(const Ray& r, float* tMax=nullptr)   const;
+            RayDifferential       operator()(const RayDifferential& r, float* tMax=nullptr) const;
 
             bool operator==(const Transform& t)     const;
             bool operator!=(const Transform& t)     const;
@@ -68,6 +69,13 @@ namespace Geo
             static Transform lookAt(const Point3& look_from, const Point3& look_at, const Vec3& vup);
 
     };
+
+    Point3 boyerLindquistToCartesian(const Point4& x, float spin);
+
+    Point3 transformToLocal3d(const Point4& xSpacetime, 
+                              const Point4& centerSpacetime, 
+                              float spin,
+                              const Transform& localFrameBasis = Transform());
 
     struct TransformHash 
     {

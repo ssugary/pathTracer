@@ -3,7 +3,6 @@
 #ifndef PRIMITIVE_HPP
 #define PRIMITIVE_HPP
 
-#include "Materials/Material.hpp"
 #include "Geometry/Rays/Ray.hpp"
 #include <memory>
 
@@ -14,6 +13,10 @@ namespace Geo
 namespace Luz 
 {
     class AreaLight;
+}
+namespace Mat 
+{
+    class Material;
 }
 namespace Prim 
 {
@@ -28,6 +31,7 @@ namespace Prim
             virtual const std::shared_ptr<Mat::Material> getMaterial() const = 0;
             virtual const std::shared_ptr<Luz::AreaLight> getAreaLight() const = 0;
     };
+
 }
 
 

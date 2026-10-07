@@ -27,6 +27,7 @@ namespace Geo
             virtual float area() const = 0;
             virtual Interaction sample(const Point2& u, float* pdf) const = 0;
             virtual Interaction sample(const Interaction& ref, const Point2& u, float* pdf) const;
+            virtual float pdf(const Interaction& ref, const Vec3& wi) const;
         };
 }
 

@@ -43,10 +43,71 @@ namespace Geo
             shading.dndv = dndvs;
         }
     
-        SampledSpectrum SurfaceInteraction::Le(const Vec3& dir, const ssrt::SampledWavelengths& lambdas) const
+    Color SurfaceInteraction::Le(const Vec3& dir) const
+    {
+        auto areaLight = primitive ? primitive->getAreaLight() : nullptr;
+        
+        return areaLight ? areaLight->L(*this, dir) : Color(0.f);
+    }
+
+    void SurfaceInteraction::computeDifferentials(const RayDifferential& ray) const
+    {
+        if (!ray.hasDifferentials)
         {
-            auto areaLight = primitive ? primitive->getAreaLight() : nullptr;
-            
-            return areaLight ? areaLight->L(*this, dir, lambdas) : SampledSpectrum(0.f);
+            dudx = dvdx = dudy = dvdy = 0.f;
+            return;
         }
+
+        float tx = ::dot((p - ray.rxOrigin), n) / ::dot(ray.rxDirection, n);
+        Point3 px = ray.rxOrigin + tx * ray.rxDirection;
+
+        dpdx = px - p;
+
+        float ty = ::dot((p - ray.ryOrigin), n) / ::dot(ray.ryDirection, n);
+        Point3 py = ray.ryOrigin + ty * ray.ryDirection;
+
+        dpdy = py - p;
+
+        int dim[2];
+        if (std::abs(n.x) > std::abs(n.y) && std::abs(n.x) > std::abs(n.z)) 
+        {
+            dim[0] = 1; 
+            dim[1] = 2; 
+        } else if (std::abs(n.y) > std::abs(n.z)) 
+        {
+            dim[0] = 0; 
+            dim[1] = 2; 
+        } else {
+            dim[0] = 0; 
+            dim[1] = 1;
+        }
+
+        float A = dpdu[dim[0]];
+        float B = dpdv[dim[0]];
+        float C = dpdu[dim[1]];
+        float D = dpdv[dim[1]];
+
+        float det = A * D - B * C;
+
+        if(std::abs(det) < EPSILON_8)
+        {
+            dudx = 0.f;
+            dvdx = 0.f;
+            dudy = 0.f;
+            dvdy = 0.f;
+        }
+        else  
+        {
+    
+            float Ex = dpdx[dim[0]];
+            float Fx = dpdx[dim[1]];
+            dudx = (Ex * D - B * Fx) / det;
+            dvdx = (A * Fx - Ex * C) / det;
+
+            float Ey = dpdy[dim[0]];
+            float Fy = dpdy[dim[1]];
+            dudy = (Ey * D - B * Fy) / det;
+            dvdy = (A * Fy - Ey * C) / det;
+        }
+    }
 }
