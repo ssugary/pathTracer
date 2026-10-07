@@ -1,0 +1,7 @@
+<RT3>
+    <named_material name="moveis"/>
+    <!-- <material type="blinn" kd ="0.6 0.3 0.1" ks="0.8 0.8 0.8" mirror="0.1 0.1 0.1" glossiness="128"/> -->
+    <scale delta="0.08 0.08 0.08 "/>
+    <object type="trianglemesh" filename="scenes/scene10/models/table.obj"
+        compute_normals="false" backface_cull ="true" reverse_vertex_order="false"/>
+</RT3>

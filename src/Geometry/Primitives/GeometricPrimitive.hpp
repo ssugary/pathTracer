@@ -5,6 +5,7 @@
 
 #include "Primitive.hpp"
 #include "Geometry/Shapes/Shape.hpp"
+#include "RelativisticPrimitive.hpp"
 
 using namespace Geo;
 namespace Prim 
@@ -27,6 +28,22 @@ namespace Prim
             const std::shared_ptr<Mat::Material> getMaterial() const override;
             const std::shared_ptr<Luz::AreaLight> getAreaLight() const override;
             Bounds3f objectBound() const override;
+
+    };
+
+    class GeometricRelativisticPrimitive : public RelativisticPrimitive
+    {
+        private:
+            
+            std::shared_ptr<Primitive> prim3D;
+            Point4 centerSpaceTime;
+            float spin;
+
+        public:
+
+            GeometricRelativisticPrimitive(std::shared_ptr<Primitive> prim3D, const Point4& center, float spin);
+            bool intersect(const GeodesicStep&, SpaceTimeInteraction*) const override;
+            bool intersectP(const GeodesicStep&) const override;
 
     };
 }; //< namespace Prim 

@@ -1,7 +1,7 @@
 <RT3>
-    <named_material name="madeira_carvalho"/>
+    <named_material name="moveis"/>
     <!-- <material type="blinn" kd="0.8 0.8 0.8" ks="0.8 0.8 0.8" mirror="0.1 0.1 0.1" glossiness="128"/> -->
     <scale delta="0.1 0.1 0.1 "/>
     <rotate axis="1 0 0" angle="-90.01"/>
-    <object type="trianglemesh" filename="scenes/scene3/models/chair.obj" backface_cull ="true"/>
+    <object type="trianglemesh" filename="scenes/scene10/models/chair.obj" backface_cull ="true"/>
 </RT3>

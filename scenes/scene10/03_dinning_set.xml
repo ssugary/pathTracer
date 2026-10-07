@@ -2,19 +2,19 @@
     <lookat look_from="10 12 -30" look_at="0 2.5 0" vup="0 1 0" />
     <camera type="perspective" fovy="75" /> 
     <aggregator type="bvh" max_prims_per_node="4" />
-    <sampler type="halton" samples_per_pixel="256" />
-    <filter type="gaussian" alpha="2" x_width="3" y_width="3" />
+    <sampler type="halton" samples_per_pixel="64" />
+    <!-- <filter type="gaussian" alpha="2" x_width="3" y_width="3" /> -->
     <!-- <accelerator type="list"/> -->
-    <integrator type="path" depth="8" />
+    <integrator type="path" depth="4" />
     <film type="image" w_res="1600" h_res="1200" filename="03_dinning_set_persp.png" img_type="png" gamma_corrected="true"/>
 
     <!-- The Scene -->
-    <include filename="scenes/scene3/03_dinning_set_geometry.xml" />
+    <include filename="scenes/scene10/03_dinning_set_geometry.xml" />
     
     <lookat look_from="0 20 0 " look_at="0 0 0" vup="-10 0 30" />
     <camera type="orthographic" screen_window="-26.5 26.5 -20 20" /> 
     <film type="image" w_res="1600" h_res="1200" filename="03_dinning_set_ortho.png" img_type="png" gamma_corrected="true"/>
 
     <!-- The Scene -->
-    <include filename="scenes/scene3/03_dinning_set_geometry.xml" />
+    <include filename="scenes/scene10/03_dinning_set_geometry.xml" />
 </RT3>

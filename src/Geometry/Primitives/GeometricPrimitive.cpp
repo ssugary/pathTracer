@@ -15,8 +15,8 @@ namespace Prim
         if (!shape->intersect(r, &tHit, sf)) 
             return false;
 
-        sf->primitive = this;
         r.tMax = tHit;        
+        sf->primitive = this;
 
         return true;
     }
@@ -39,12 +39,28 @@ namespace Prim
     
     const std::shared_ptr<Mat::Material> GeometricPrimitive::getMaterial() const 
     { 
-        return material;
+        return this->material;
     }
     
     const std::shared_ptr<Luz::AreaLight> GeometricPrimitive::getAreaLight() const 
     { 
-        return areaLight;
+        return this->areaLight;
     }
     
+
+    GeometricRelativisticPrimitive::GeometricRelativisticPrimitive(std::shared_ptr<Primitive> prim3D, const Point4& center, float spin)
+    : prim3D(prim3D), centerSpaceTime(center), spin(spin) {}
+
+    bool GeometricRelativisticPrimitive::intersect(const GeodesicStep& step, SpaceTimeInteraction* isect) const 
+    {
+        Point3 p1 = transformToLocal3d(step.prevRay.x, centerSpaceTime, spin);
+        Point3 p2 = transformToLocal3d(step.currRay.x, centerSpaceTime, spin);
+        
+    }
+
+    bool GeometricRelativisticPrimitive::intersectP(const GeodesicStep& step) const
+    {
+
+    }
+
 };
