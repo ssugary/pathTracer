@@ -14,10 +14,20 @@ namespace Sam
     class UniformLightSampler 
     {
         private:
-            std::vector<std::shared_ptr<Luz::Light>> lights;
 
+            std::vector<std::shared_ptr<Luz::Light>> lights;
+            
         public:
+            std::shared_ptr<Luz::Light> envLight;
         
+            UniformLightSampler() = default;
+            UniformLightSampler(const std::vector<std::shared_ptr<Luz::Light>>& lights);
+
+            std::shared_ptr<Luz::Light> sample(float u, float* outPmf) const;
+            float pmf() const;
+            bool empty() const;
+            std::vector<std::shared_ptr<Luz::Light>> get() const;
+
 
     };
 

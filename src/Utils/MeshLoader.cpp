@@ -28,7 +28,8 @@ namespace ssrt
 
     std::vector<std::shared_ptr<Geo::Triangle>> loadOBJ(const std::string& filepath, 
                                                                         bool reverseOrientation,
-                                                                        bool swapHandedness) 
+                                                                        bool swapHandedness,
+                                                                        bool backfaceCull) 
     {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
@@ -43,6 +44,7 @@ namespace ssrt
             std::cerr << "OBJ ERR: " << err << std::endl;
         if (!success)      
             return {};
+
 
         std::vector<Point3> P;
         std::vector<Normal3> N;
@@ -120,6 +122,7 @@ namespace ssrt
                 (
                     reverseOrientation, 
                     swapHandedness, 
+                    backfaceCull,
                     mesh, 
                     i
                 ));
@@ -133,6 +136,39 @@ namespace ssrt
         int channels;
         data = stbi_load(filename.c_str(), width, height, &channels, c);
     
+        if(!data) 
+        {
+            std::cerr << "ERRO STB: " << stbi_failure_reason() << " | Arquivo: " << filename << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+    bool loadImgTexture(const std::string& filename, Color*& data, int* width, int* height, int c)
+    {
+        int channels;
+        unsigned char* raw;
+        raw = stbi_load(filename.c_str(), width, height, &channels, c);
+        
+        if(!raw) 
+        {
+            std::cerr << "ERRO STB: " << stbi_failure_reason() << " | Arquivo: " << filename << std::endl;
+            return false;
+        }
+        
+        data = new Color[(*width) * (*height)];
+
+        for(int i{0}; i < (*width) * (*height); ++i)
+            data[i] = Color(raw[i * 3] / 255.f, raw[i * 3 + 1] / 255.f, raw[i * 3 + 2] / 255.f);
+        
+        stbi_image_free(raw);
+        return true;
+    }
+    bool loadImgTexture(const std::string& filename, float*& data, int* width, int* height, int c)
+    {
+        int channels;
+        data = stbi_loadf(filename.c_str(), width, height, &channels, c);
+        
         if(!data) 
         {
             std::cerr << "ERRO STB: " << stbi_failure_reason() << " | Arquivo: " << filename << std::endl;

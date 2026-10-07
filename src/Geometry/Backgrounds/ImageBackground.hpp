@@ -4,6 +4,7 @@
 #define IMAGE_BACKGROUND_HPP
 
 #include <Geometry/Backgrounds/Background.hpp>
+#include <memory>
 #include <STBI/stb_image.h>
 
 namespace Prim 
@@ -12,20 +13,16 @@ namespace Prim
     {
         private:
 
-            unsigned char* data{nullptr};
+            std::shared_ptr<unsigned char> data{nullptr};
             int width{0};
             int height{0};
 
         public:
         
-            ImageBackground(unsigned char* data, const int w, const int h)
+            ImageBackground(std::shared_ptr<unsigned char> data, const int w, const int h)
             : data(std::move(data)), width(w), height(h) {};
 
-            ~ImageBackground()
-            {
-                if(data)
-                    stbi_image_free(data);
-            }
+            ~ImageBackground() = default;
 
             Color sample(const Vec3& d, float=1.f, float=1.f) const override;
 

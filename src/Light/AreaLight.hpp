@@ -16,20 +16,23 @@ namespace Luz
 
         public:
         
-            std::shared_ptr<Geo::Shape> shape;
+            std::shared_ptr<Geo::Shape> shape{nullptr};
             std::shared_ptr<const Transform> O2W{nullptr};
             std::shared_ptr<const Transform> W2O{nullptr};
 
-            AreaLight(std::shared_ptr<Spectrum> intensity, std::shared_ptr<Spectrum> scale)
+            AreaLight(Color intensity, Color scale)
             : Light(intensity, scale) {flag = LightFlag::AREA;};
 
-            virtual SampledSpectrum L(const Interaction &intr, const Vec3 &w, const ssrt::SampledWavelengths& lambdas) const = 0;
+            virtual Color L(const Interaction &intr, const Vec3 &w) const = 0;
             virtual std::shared_ptr<AreaLight> clone() const = 0;
             
-            virtual SampledSpectrum sampleLi(const Geo::Interaction& ref, 
+            virtual Color sampleLi(const Geo::Interaction& ref, 
                                    const Point2& u, 
-                                   const ssrt::SampledWavelengths& lambdas,
                                    Vec3* wi, float* pdf, VisibilityTester* vis) const override = 0;
+            virtual float pdf(const Geo::Interaction& ref, const Vec3& wi) const override
+            {
+                return shape->pdf(ref, wi);
+            }
     };
 }; //< namespace Luz
 

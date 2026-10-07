@@ -28,7 +28,7 @@ namespace Itg
             {}
 
             virtual void render(const Scene& scene) override;
-            virtual std::optional<SampledSpectrum> li(const Ray& ray, const Scene& scene, Sam::Sampler& sampler, ssrt::SampledWavelengths wl) const = 0;
+            virtual std::optional<Color> li(const RayDifferential& ray, const Scene& scene, Sam::Sampler& sampler) const = 0;
             virtual void preprocess(const Scene&){};
     };
 

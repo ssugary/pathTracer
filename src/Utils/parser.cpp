@@ -391,6 +391,17 @@ std::unordered_map<std::string, std::vector<std::string>> tag_catalog
          "glossiness",
          //  "color_map",
          "mirror",
+         "roughness",   
+         "ior",         
+        "eta",         
+        "k",    
+        "kd_texture",   
+        "roughness_texture",   
+        "ior_texture",         
+        "eta_texture",         
+        "k_texture",      
+        "mat_type",
+        "normal_map",
      }},
      {"emitter",
       {
@@ -412,6 +423,30 @@ std::unordered_map<std::string, std::vector<std::string>> tag_catalog
     {"named_emitter",
       {
         "name",
+      }
+    },
+    {"named_texture",
+      {
+        "name",
+      }
+    },
+    {"make_named_texture",
+      {
+        "name",
+        "type",
+        "mapping",
+        "filename",
+        "data_type",
+        "br",
+        "bl",
+        "tr",
+        "tl",
+        "value",
+        "mode",
+        "su",
+        "sv",
+        "trilinear",
+        "max_anisotropy",
       }
     },
     {"object",
@@ -440,6 +475,7 @@ std::unordered_map<std::string, std::vector<std::string>> tag_catalog
           "reverse_vertex_order",
           "compute_normals",
           "backface_cull",
+          "swap_handedness",
           "filename",
      }},
     {"aggregator",
@@ -466,6 +502,17 @@ std::unordered_map<std::string, std::vector<std::string>> tag_catalog
          "glossiness",
          //  "color_map",
          "mirror",
+         "roughness",   
+         "ior",         
+        "eta",         
+        "k",           
+        "kd_texture",   
+        "roughness_texture",   
+        "ior_texture",         
+        "eta_texture",         
+        "k_texture",      
+        "mat_type",
+        "normal_map",
      }},
     {"named_material",
      {
@@ -548,6 +595,11 @@ std::unordered_map<std::string, std::vector<std::string>> tag_catalog
      }},
 };
 
+std::unordered_map<std::string, std::vector<std::string>> similar_tags
+{
+
+};
+
 /// Maps the tag name to its corresponding API function.
 std::unordered_map<std::string, std::function<void(const ParamSet &)>>
     api_functions{
@@ -563,6 +615,7 @@ std::unordered_map<std::string, std::function<void(const ParamSet &)>>
         {"named_emitter", API::namedEmitter},
         {"named_material", API::namedMaterial}, {"light_source",
         API::lightSource},
+        {"named_texture", API::namedTexture}, {"make_named_texture", API::makeNamedTexture},
         {"aggregator", API::aggregator}, {"translate", API::translate},
         {"rotate", API::rotate}, {"scale", API::scale},
         {"identity", API::identity}, 
@@ -620,6 +673,27 @@ std::unordered_map<std::string, ConverterFunction> converters{
     {"kd", convert<Color>},
     {"ks", convert<Color>},
     {"glossiness", convert<float>},
+    {"roughness", convert<float>},
+    {"ior", convert<float>},
+    {"eta", convert<Color>},      
+    {"k", convert<Color>},
+
+    {"roughness_texture", convert<std::string>},
+    {"ior_texture", convert<std::string>},
+    {"eta_texture", convert<std::string>},
+    {"k_texture", convert<std::string>},
+    {"kd_texture", convert<std::string>},
+    {"trilinear", convert<std::string>},
+    {"max_anisotropy", convert<float>},
+
+    {"mat_type", convert<std::string>},
+    {"data_type", convert<std::string>},
+    {"mapping", convert<std::string>},
+    {"normal_map", convert<std::string>},
+    {"mode", convert<std::string>},
+    {"value", convert<Color>},
+    {"su", convert<float>},
+    {"sv", convert<float>},
     // Object attributes
     {"radius", convert<float>},
     {"center", convert<Point3>},
@@ -640,6 +714,7 @@ std::unordered_map<std::string, ConverterFunction> converters{
     {"reverse_vertex_order", convert<std::string>},
     {"compute_normals", convert<std::string>},
     {"backface_cull", convert<std::string>},
+    {"swap_handedness", convert<std::string>},
     // Integrator
     {"zmin", convert<float>},
     {"zmax", convert<float>},

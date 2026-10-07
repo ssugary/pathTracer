@@ -1,9 +1,10 @@
 #ifndef SSMATH_3_HPP 
 #define SSMATH_3_HPP
 
+#include "ssmath3/foward.hpp"
+#include "array2d.hpp"
 #include "pixel.hpp"
 #include "matrix.hpp"
-#include "ssmath3/foward.hpp"
 #include "vector.hpp"
 #include "normal.hpp"
 #include "point.hpp"
@@ -531,6 +532,12 @@ namespace ssmath3
     }
 
     template<typename T>
+    inline Vector<T, 4> lerp(float t, const Vector<T, 4>& v1, const Vector<T, 4>& v2) noexcept
+    {
+      return (1 - t) * v1 + t * v2;
+    }
+
+    template<typename T>
     constexpr Vector<T, 4>::Vector(const Point<T, 4>& p) noexcept : x(p.x), y(p.y), z(p.z), w(p.w) {};
     template<typename T>
     constexpr Vector<T, 4>::Vector(const Normal<T, 4>& n) noexcept : x(n.x), y(n.y), z(n.z), w(n.w) {};
@@ -858,6 +865,12 @@ namespace ssmath3
     inline Point<T, 4> max(const Point<T, 4>& p1, const Point<T, 4>& p2)
     {
       return Point<T, 4>(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z), std::max(p1.w, p2.w));
+    }
+
+    template<typename T>
+    inline Point<T, 4> lerp(float t, const Point<T, 4>& p1, const Point<T, 4>& p2) noexcept
+    {
+      return (1 - t) * p1 + t * p2;
     }
 
     template<typename T>

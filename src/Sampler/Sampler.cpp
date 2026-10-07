@@ -7,7 +7,7 @@ namespace Sam
 
     void Sampler::startPixel(const Point2i& p) 
     {
-        currenPix = p;
+        currentPix = p;
         currentPixIndex = 0;
         arrayOffset1D = 0;
         arrayOffset2D = 0;
@@ -21,7 +21,7 @@ namespace Sam
         return ++currentPixIndex < samplesPerPixel;
     }
 
-    bool Sampler::setSampleNumber(int32_t sampleNum)
+    bool Sampler::setSampleNumber(int64_t sampleNum)
     {
         arrayOffset1D = 0;
         arrayOffset2D = 0;

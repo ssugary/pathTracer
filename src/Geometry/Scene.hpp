@@ -6,6 +6,7 @@
 #include "Primitives/AggregatePrimitive.hpp"
 #include "Backgrounds/Background.hpp"
 #include "Light/Light.hpp"
+#include "Sampler/UniformLightSampler.hpp"
 #include <memory>
 #include <vector>
 
@@ -20,7 +21,8 @@ namespace Geo
             Bounds3f worldBounds;
 
         public:
-            std::vector<std::shared_ptr<Luz::Light>> lights;
+            // std::vector<std::shared_ptr<Luz::Light>> lights;
+            Sam::UniformLightSampler lights;
             std::shared_ptr<Background> background;
             std::shared_ptr<AggregatePrimitive> aggregate;
 

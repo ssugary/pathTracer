@@ -20,7 +20,7 @@ namespace Sam
             RNG rng;
 
         public:
-            PixelSampler(int32_t samplesPerPixel, std::size_t nSampledDimensions)
+            PixelSampler(int64_t samplesPerPixel, std::size_t nSampledDimensions)
             : Sampler(samplesPerPixel), current1DDimension(0), current2DDimension(0)
             {
                 samples1D.resize(nSampledDimensions, std::vector<float>(samplesPerPixel));
@@ -28,7 +28,7 @@ namespace Sam
             }
 
             bool startNextSample() override;
-            bool setSampleNumber(int32_t sampleNum) override;
+            bool setSampleNumber(int64_t sampleNum) override;
             float get1D() override;
             Point2 get2D() override;
             virtual void startPixel(const Point2i& p) override;

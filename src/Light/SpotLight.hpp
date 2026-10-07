@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef SPOT_LIGHT_HPP
 #define SPOT_LIGHT_HPP
 
@@ -22,15 +20,12 @@ namespace Luz
         public:
 
 
-            SpotLight(std::shared_ptr<Spectrum> intensity, std::shared_ptr<Spectrum> scale, Point3 from, Point3 to, float cutoff, float fallof)
+            SpotLight(Color intensity, Color scale, Point3 from, Point3 to, float cutoff, float fallof)
             : Light(intensity, scale), from(from), axis(::normalize(to - from)), cutoff(cutoff), falloff(fallof)
-            {
-                this->flag = LightFlag::SPOT;
-            };
+            {};
 
-            SampledSpectrum sampleLi(const Geo::Interaction& hit, 
+            Color sampleLi(const Geo::Interaction& hit, 
                                     const Point2&, 
-                                    const ssrt::SampledWavelengths& lambdas,
                                     Vec3* wi, float* pdf, VisibilityTester* vis) const override
             {
                 
@@ -41,23 +36,23 @@ namespace Luz
                 *wi = normalize(dir);
                 *pdf = 1.0f;
 
-                float angle = std::acos(dot(-(*wi), axis)) * (180.0 / M_PI);
-
-                double spot = 1.0;
+                float angle = std::acos(dot(-(*wi), axis)) * (180.f / PI);
+                float spot = 1.f;
 
                 if(angle >= cutoff)
                 {
-                    return SampledSpectrum(0.f);
+                    return Color();
                 }
                 else if(angle >= falloff)
                 {
                     spot = (cutoff - angle) / (cutoff - falloff);
-                }           
-                
-                SampledSpectrum I = intensity->sample(lambdas);
-                SampledSpectrum S = scale->sample(lambdas);
+                }                
 
-                return I * S * spot;
+                return intensity * scale * spot;
+            }
+            float pdf(const Geo::Interaction&, const Vec3&) const override
+            {
+                return 0.f;
             }
     };
 

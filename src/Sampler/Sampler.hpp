@@ -19,8 +19,8 @@ namespace Sam
 
         protected:
         
-            Point2i currenPix{0, 0};
-            int32_t currentPixIndex{0};
+            Point2i currentPix{0, 0};
+            int64_t currentPixIndex{0};
             std::vector<int> samplesArraySizes1D;
             std::vector<int> samplesArraySizes2D;
             std::vector<std::vector<float>> sampleArray1D;
@@ -28,21 +28,21 @@ namespace Sam
 
         public:
 
-            int32_t samplesPerPixel{0};
+            int64_t samplesPerPixel{0};
 
             virtual ~Sampler() = default;
             virtual int RoundCount(int n) const 
             {
                 return n;
             }
-            Sampler(int32_t samplesPerPixel) 
+            Sampler(int64_t samplesPerPixel) 
             : samplesPerPixel(samplesPerPixel) {};
             
             virtual void startPixel(const Point2i&);
             virtual float get1D() = 0;
             virtual Point2 get2D() = 0;
             virtual bool startNextSample();
-            virtual bool setSampleNumber(int32_t sampleNum);
+            virtual bool setSampleNumber(int64_t sampleNum);
             virtual std::unique_ptr<Sampler> clone(int seed) = 0;
             
             CameraSample getCameraSample(const Point2i&);

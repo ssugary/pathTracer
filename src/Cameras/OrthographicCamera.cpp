@@ -19,19 +19,19 @@ namespace Cam
     }
     RayDifferential OrthographicCamera::generateRayDifferential(/*const CameraSample&*/int x, int y) const 
     {
-        Point3 p(x, y, 0);
+        Point3 p(x + 0.5f, y + 0.5f, 0.f);
         Point3 camPos = R2C(p);
-        RayDifferential ray(camPos, Vec3(0, 0, 1));
+        RayDifferential ray(camPos, Vec3(0.f, 0.f, -1.f));
         /*TODO: modify ray for depths of field*/
         if(lensR > 0)
         {
-            float ft = focalD / ray.d[2];
-            Point3 focus = (camPos + dx) + (ft * Vec3(0, 0, 1));
-            ray.rxOrigin = Point3(p[0], p[1], 0);
+            float ft = focalD / ray.d.z;
+            Point3 focus = (camPos + dx) + (ft * Vec3(0.f, 0.f, -1.f));
+            ray.rxOrigin = camPos + dx;
             ray.rxDirection = normalize(focus - ray.rxOrigin); 
             
-            focus = camPos + dy + (ft * Vec3(0, 0, 1));
-            ray.ryOrigin = Point3(p[0], p[1], 0);
+            focus = camPos + dy + (ft * Vec3(0.f, 0.f, -1.f));
+            ray.ryOrigin = camPos + dy;
             ray.ryDirection = normalize(focus - ray.ryOrigin);
         }
         else 

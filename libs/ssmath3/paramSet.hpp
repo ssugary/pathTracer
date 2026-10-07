@@ -12,6 +12,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 #include <typeinfo>
 
 namespace ssmath3
@@ -98,6 +99,33 @@ public:
     return data.m_value;  // Finally, return the stored value.
   }
 
+  template <typename T>
+  T retrieve(const std::vector<std::string>& keys, const T& default_value = T{}) const 
+  {
+    // Try to retrieve key/data item from the map.
+    for(const auto& key : keys)
+    { 
+      auto result = m_map.find(key);
+      if (result == m_map.end())   // Not found!
+        continue;
+      
+      // Get key-value pair from iterator.
+      const auto& [the_key, sptr] = *result;
+      // Convert generic pointer to the base value of type T.
+      try 
+      {
+        auto dummy = dynamic_cast<ValueType<T>&>(*sptr);
+
+      } catch (const std::bad_cast& e) 
+      {
+        std::cout << "Received a bad_cast exception while trying to convert " << std::quoted(the_key)
+                  << "\n";
+      }
+      auto data = dynamic_cast<ValueType<T>&>(*sptr);
+      return data.m_value;  // Finally, return the stored value.
+    }
+    return default_value;
+  }
   /*!
    * Assigns a pair key-value to the ParamSet.
    * If the key already exists, the stored value is overwritten by the new data value provided.

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Geometry/Textures/Texture.hpp>
 #ifndef FLAT_MATERIAL_HPP
 #define FLAT_MATERIAL_HPP
 
@@ -11,21 +12,33 @@ namespace Mat
     class FlatMaterial : public Material 
     {
         private:
-            std::shared_ptr<Spectrum> color;
+            Color color;
         public:
-            FlatMaterial(std::shared_ptr<Spectrum> color, std::shared_ptr<Spectrum> mirror) 
+            FlatMaterial(Color color, Color mirror) 
             : Material(mirror), color(color) {};
-            std::shared_ptr<Spectrum> kd() const override {return color;};
-            std::shared_ptr<Spectrum> km() const override {return mirror;};    
-            SampledSpectrum f(const Vec3&, const Vec3&, const Normal3&, const ssrt::SampledWavelengths& lambdas) const override 
+            Color kd() const {return color;};
+            Color f(const SurfaceInteraction& si, const Vec3& wo, const Vec3& wi/*, const ssrt::SampledWavelengths& lambdas*/) const override 
             {
-                return color ? color->sample(lambdas) : ssrt::SampledSpectrum(0.f);
+                return computeBSDF(si)->f(wo, wi);
             }
-            SampledSpectrum sampleF(const Vec3&, const Normal3&, const Point2&,
-                                    const ssrt::SampledWavelengths& lambdas,
-                                    Vec3*, float*) const override 
+            Color sampleF(const SurfaceInteraction& si, const Vec3& wo, const Point2& u,
+                                    /*const ssrt::SampledWavelengths& lambdas,*/
+                                    Vec3* wi, float* pdf) const override 
             {
-                return color ? color->sample(lambdas) : ssrt::SampledSpectrum(0.f);
+                return computeBSDF(si)->sampleF(wo, u, wi, pdf);
+            }
+            float pdf(const SurfaceInteraction& si, const Vec3& wo, const Vec3& wi) const override 
+            {
+                return computeBSDF(si)->pdf(wo, wi);
+            };
+
+            std::shared_ptr<BSDF> computeBSDF(const SurfaceInteraction& si) const override 
+            {
+
+                Normal3 ns = Geo::applyNormalMap(si, nullptr);
+                auto bsdf = std::make_shared<BSDF>(ns);
+                bsdf->add(std::make_shared<FlatBxDF>(color));
+                return bsdf;
             }
     };
 

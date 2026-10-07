@@ -36,4 +36,23 @@ namespace Geo
 
         return it;
     }
+    float Shape::pdf(const Interaction& ref, const Vec3& wi) const
+    {
+
+        Ray r = ref.spawnRay(wi);
+        float tHit = r.tMax;
+        SurfaceInteraction sf;
+
+        if(!this->intersect(r, &tHit, &sf))
+            return 0.f;
+
+        float cos = std::abs(dot(-wi, sf.n));
+        
+        if(cos <= EPSILON_6)
+            return 0.f;
+
+        float dist2 = sqrDist(ref.p, sf.p);
+
+        return dist2 / (this->area() * cos);
+    }
 }

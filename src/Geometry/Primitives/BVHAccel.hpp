@@ -70,7 +70,7 @@ namespace Prim
             
             public:
 
-            BVHAccel(const std::vector<std::shared_ptr<Primitive>>& p, const int maxPrimsPerNode, SplitMethod m = MIDDLE)
+            BVHAccel(const std::vector<std::shared_ptr<Primitive>>& p, const int maxPrimsPerNode, SplitMethod m = SAH)
             : MAX_PRIMS_PER_NODE(maxPrimsPerNode), METHOD(m), prims(p), arena(1024 * 1024)
             {
                 if(prims.empty())
@@ -78,9 +78,8 @@ namespace Prim
   
                 std::vector<BVHPrimitiveInfo> primInfos(prims.size());
                 for(std::size_t i{0}; i < prims.size(); ++i)
-                {
                   primInfos[i] = BVHPrimitiveInfo(i, prims[i]->objectBound());
-                }
+                
 
                 int total = 0;
                 std::vector<std::shared_ptr<Primitive>> orderedPrims;
@@ -170,7 +169,88 @@ namespace Prim
                           
                           break;
                         }
-                      default: // SplitMethod::SAH
+                      case SplitMethod::SAH:
+                        {
+                            if (nPrimitives <= 2) 
+                            {
+                                mid = (start + end) / 2;
+                                std::nth_element(&pInfo[start], &pInfo[mid], &pInfo[end - 1] + 1,
+                                    [dim](const BVHPrimitiveInfo &a, const BVHPrimitiveInfo &b) 
+                                      {
+                                          return a.centroid[dim] < b.centroid[dim];
+                                      });
+                            } 
+                            else 
+                            {
+                                constexpr int nBuckets = 12;
+                                struct BucketInfo { int count = 0; Bounds3f bounds; };
+                                BucketInfo buckets[nBuckets];
+
+                                for (int i = start; i < end; ++i) 
+                                {
+                                    float offset = (pInfo[i].centroid[dim] - centroidB.pMin[dim]) / 
+                                                  (centroidB.pMax[dim] - centroidB.pMin[dim]);
+                                    int b = nBuckets * offset;
+                                    if (b == nBuckets) b = nBuckets - 1;
+                                    buckets[b].count++;
+                                    buckets[b].bounds = boundUnion(buckets[b].bounds, pInfo[i].bound);
+                                }
+
+                                float cost[nBuckets - 1];
+                                for (int i = 0; i < nBuckets - 1; ++i) 
+                                {
+                                    Bounds3f b0, b1;
+                                    int count0 = 0, count1 = 0;
+                                    for (int j = 0; j <= i; ++j) 
+                                    {
+                                        b0 = boundUnion(b0, buckets[j].bounds);
+                                        count0 += buckets[j].count;
+                                    }
+                                    for (int j = i + 1; j < nBuckets; ++j) 
+                                    {
+                                        b1 = boundUnion(b1, buckets[j].bounds);
+                                        count1 += buckets[j].count;
+                                    }
+                                    cost[i] = 1.0f + (count0 * b0.area() + count1 * b1.area()) / allBounds.area();
+                                }
+
+                                float minCost = cost[0];
+                                int minCostSplitBucket = 0;
+                                for (int i = 1; i < nBuckets - 1; ++i) 
+                                {
+                                    if (cost[i] < minCost) 
+                                    {
+                                        minCost = cost[i];
+                                        minCostSplitBucket = i;
+                                    }
+                                }
+
+                                float leafCost = nPrimitives;
+                                if (nPrimitives > MAX_PRIMS_PER_NODE || minCost < leafCost) 
+                                {
+                                    BVHPrimitiveInfo* pmid = std::partition(&pInfo[start], &pInfo[end - 1] + 1,
+                                        [=](const BVHPrimitiveInfo &pi)
+                                          {
+                                            float offset = (pi.centroid[dim] - centroidB.pMin[dim]) / 
+                                                          (centroidB.pMax[dim] - centroidB.pMin[dim]);
+                                            int b = nBuckets * offset;
+                                            if (b == nBuckets) b = nBuckets - 1;
+                                            return b <= minCostSplitBucket;
+                                          });
+                                    mid = pmid - &pInfo[0];
+                                } 
+                                else 
+                                {
+                                    int firstPOffset = orderedPrims.size();
+                                    for (int i = start; i < end; ++i)
+                                        orderedPrims.push_back(prims[pInfo[i].pNum]);
+                                    node->initLeaf(firstPOffset, nPrimitives, allBounds);
+                                    return node;
+                                }
+                            }
+                            break;
+                        }
+                      default: 
                         {
                           break;
                         }

@@ -1,96 +1,99 @@
 #include "SamplerIntegrator.hpp"
-#include "Utils/Spectrum/XYZ.hpp"
+#include "Sampler/Sampler.hpp"
+#include "Utils/common.hpp"
+#include <algorithm>
 #include <iostream>
+#include <thread>
 
 namespace Itg 
 {
 
     void SamplerIntegrator::render(const Scene& scene)
     {
-        if (!camera || !camera->film || !sampler) 
-        {
-            std::cerr << "[Erro Render] Camera, Film ou Sampler não foram inicializados!\n";
-            return;
-        }
+        if (!camera || !camera->film || !sampler) {
+        std::cerr << "[Erro Render] Camera, Film ou Sampler não foram inicializados!\n";
+        return;
+    }
 
-        // preprocess(scene);
+        preprocess(scene);
 
         Bounds2i bounds = camera->film->getSampleBounds();
 
         auto w = bounds.pMax.x;
         auto h = bounds.pMax.y;
-        
-        for(int j{bounds.pMin.y}; j < h; ++j)
+        unsigned int nThreads = std::min((unsigned int)std::max(1, h - bounds.pMin.y), 
+                                   std::max(1u, std::thread::hardware_concurrency()));
+        std::vector<std::thread> workers;
+
+        auto renderRows = [&](int rowStart, int rowEnd, int threadSeed)
         {
-            for(int i{bounds.pMin.x}; i < w; ++i)
-            {
+            std::unique_ptr<Sam::Sampler> localSampler = sampler->clone(threadSeed);
 
-                sampler->startPixel(Point2i(i, j));
-
-                do 
+            for(int j = rowStart; j < rowEnd; ++j)
+                for(int i = bounds.pMin.x; i < w; ++i)
                 {
-                    Point2 jitter = sampler->get2D();
-
-                    float px = i  + jitter.x;
-                    float py = j + jitter.y;
-
-                    Ray ray = camera->generateRay(px, py);
-
-                    float uLambda = sampler->get1D();
-                    ssrt::SampledWavelengths lambdas = ssrt::SampledWavelengths::sampleUniform(uLambda, 360.f, 830.f);
-                    
-                    auto tempL = li(ray, scene, *sampler, lambdas);
-
-                    Color finalColor{0.f};
-                    
-                    if (tempL.has_value()) 
+                    localSampler->startPixel(Point2i(i, j));
+                    do
                     {
-                        SampledSpectrum L = tempL.value();
-                        SampledSpectrum pdf = lambdas.PDF(); 
+                        Point2 jitter = localSampler->get2D();
+                        float px = i + jitter.x;
+                        float py = j + jitter.y;
+                        RayDifferential ray = camera->generateRayDifferential(px, py);
 
-                        float X{0.f};
-                        float Y{0.f};
-                        float Z{0.f};
-
-                        for (int w = 0; w < 4; ++w) 
-                            if (pdf[w] > 0.f) 
-                            {
-                                float x_val = ssrt::cieX(lambdas[w]); 
-                                float y_val = ssrt::cieY(lambdas[w]);
-                                float z_val = ssrt::cieZ(lambdas[w]);
-
-                                X += L[w] * x_val / pdf[w];
-                                Y += L[w] * y_val / pdf[w];
-                                Z += L[w] * z_val / pdf[w];
-                            }
-                        
-                        
-                        X /= (ssrt::CIE_Y_INTEGRAL * 4.f); 
-                        Y /= (ssrt::CIE_Y_INTEGRAL * 4.f); 
-                        Z /= (ssrt::CIE_Y_INTEGRAL * 4.f);
-
-                        finalColor = ssrt::XYZToRGB(ssrt::XYZ(X, Y, Z)); 
-
-                        finalColor.r = std::max(0.f, finalColor.r);
-                        finalColor.g = std::max(0.f, finalColor.g);
-                        finalColor.b = std::max(0.f, finalColor.b);
-                    }
-                    else 
-                    {
                         auto u = float(i) / float(w);
                         auto v = 1.0f - float(j) / float(h);
-                        finalColor = scene.background->sample(::normalize(ray.d), u, v);
-                    }   
 
-                    camera->film->addSample(Point2(i, j), finalColor);
+                        auto tempL = li(ray, scene, *localSampler);
+                        Color L = tempL.has_value() ? tempL.value() : scene.background->sample(::normalize(ray.d), u, v);  
 
-
+                        camera->film->addSample(Point2(i, j), L);
+                    }
+                    while(localSampler->startNextSample());
                 }
-                while(sampler->startNextSample());
+        };
 
-
-            }
+        int rowsPerThread = std::max(1, (h - bounds.pMin.y) / (int)nThreads);
+        int row = bounds.pMin.y;
+        for(unsigned int t = 0; t < nThreads; ++t)
+        {
+            int rowEnd = (t == nThreads - 1) ? h : std::min(h, row + rowsPerThread);
+            workers.emplace_back(renderRows, row, rowEnd, (int)t);
+            row = rowEnd;
         }
+        
+        for(auto& w : workers) 
+            w.join();
+        // for(int j{bounds.pMin.y}; j < h; ++j)
+        // {
+        //     for(int i{bounds.pMin.x}; i < w; ++i)
+        //     {
+
+        //         sampler->startPixel(Point2i(i, j));
+
+        //         do 
+        //         {
+        //             Point2 jitter = sampler->get2D();
+
+        //             float px = i  + jitter.x;
+        //             float py = j + jitter.y;
+
+        //             Ray ray = camera->generateRay(px, py);
+                    
+        //             auto tempL = li(ray, scene, *sampler);
+        //             auto u = float(i) / float(w);
+        //             auto v = 1.0f - float(j) / float(h);
+
+        //             Color L = (tempL.has_value()) ?  tempL.value() : scene.background->sample(normalize(ray.d), u, v);
+
+
+        //             camera->film->addSample(Point2(i, j), L);
+
+        //         }
+        //         while(sampler->startNextSample());
+
+
+        //     }
+        // }
         camera->film->writeImage();
 
 

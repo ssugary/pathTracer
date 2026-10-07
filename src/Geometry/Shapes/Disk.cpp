@@ -42,6 +42,19 @@ namespace Geo
             sf->uv = {u, v};
             sf->shape = this;
 
+
+            float rHit = std::sqrt(dist2);
+            float invRHit = rHit > 0.f ? 1.f / rHit : 0.f;
+            float dRadius = radius - innerRadius;
+
+            sf->dpdu = Vec3(-phiMax * phit.y, phiMax * phit.x, 0.f);;
+            sf->dpdv = -dRadius * Vec3(phit.x * invRHit, phit.y * invRHit, 0.f);
+            
+            sf->shading.n = sf->n;
+            sf->shading.dpdu = sf->dpdu;
+            sf->shading.dpdv = sf->dpdv;
+
+
         }
         return true;
     };

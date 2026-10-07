@@ -32,7 +32,14 @@ namespace Geo
             sf->pError = static_cast<float>(gamma(3)) * abs(static_cast<Vec3>(sf->p));;
             sf->wo = -r.d;
             sf->shape = this;
+
+            coordinateSystem(static_cast<Vec3>(sf->n), &sf->dpdu, &sf->dpdv);
             
+            sf->uv = Point2(dot(static_cast<Vec3>(sf->p), sf->dpdu), dot(static_cast<Vec3>(sf->p), sf->dpdv));
+
+            sf->shading.n = sf->n;
+            sf->shading.dpdu = sf->dpdu;
+            sf->shading.dpdv = sf->dpdv;
         }
 
         return true;

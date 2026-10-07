@@ -1,10 +1,9 @@
-#pragma once
-
 #ifndef DIFFUSE_AREA_LIGHT_HPP
 #define DIFFUSE_AREA_LIGHT_HPP
 
 #include "AreaLight.hpp"
 #include "VisibilityTester.hpp"
+
 
 namespace Luz 
 {
@@ -13,34 +12,18 @@ namespace Luz
         private:
 
             bool twoSided;
-            float alpha; //< TODO FloatTexture
-
-            inline bool alphaMask(const Geo::Interaction&) const
-            {
-                if(!alpha)
-                        return false;
-                return false;
-            }
+        
         public:
-
-            DiffuseAreaLight(std::shared_ptr<Spectrum> intensity, std::shared_ptr<Spectrum> scale, bool twoSided = false, float alpha = 0.f)
-            : AreaLight(intensity, scale), twoSided(twoSided), alpha(alpha)
+        
+            DiffuseAreaLight(const Color& intensity, const Color& scale, bool twoSided = false)
+            : AreaLight(intensity, scale), twoSided(twoSided)
             {
-                shape = nullptr;
                 flag = LightFlag::AREA;
             }
 
-            SampledSpectrum L(const Geo::Interaction& intr, const Vec3& w, const ssrt::SampledWavelengths& lambdas) const override
+            Color L(const Geo::Interaction& intr, const Vec3& w) const override
             {
-                if(!twoSided && dot(intr.n, w) <= SHADOW_EPSILON)
-                    return SampledSpectrum(0.f);
-                if(alphaMask(intr))
-                    return SampledSpectrum(0.f);
-
-                SampledSpectrum I = intensity->sample(lambdas);
-                SampledSpectrum S = scale->sample(lambdas);
-
-                return I * S;
+                return dot(intr.n, w) > 0 ? intensity * scale : Color(0.f, 0.f, 0.f);
             }
 
             std::shared_ptr<AreaLight> clone() const override
@@ -54,56 +37,32 @@ namespace Luz
                 return cloned;
             }
 
-            SampledSpectrum sampleLi(const Geo::Interaction& ref, 
+            Color sampleLi(const Geo::Interaction& ref, 
                                     const Point2& u, 
-                                    const ssrt::SampledWavelengths& lambdas,
                                     Vec3* wi, float* pdf, VisibilityTester* vis) const override
             {
-                
-                if (!shape) 
-                {
-                    *pdf = 0.f;
-                    return SampledSpectrum(0.f);
-                }  
-                
-                Geo::Interaction pShape = shape->sample(u, pdf);
+                Geo::Interaction pShape = shape->sample(ref, u, pdf);
 
-                if(*pdf <= 0.f)
-                {
-                    *pdf = 0.f;
-                    return SampledSpectrum(0.f);
-                }
-                
-            
-                if (O2W) 
-                {
-                    pShape.p =  (*O2W)(pShape.p, pShape.pError, &pShape.pError);
-                    pShape.n =  normalize((*O2W)(pShape.n));
-                }
+                if (*pdf == 0.f) 
+                    return Color();
 
                 Vec3 d = pShape.p - ref.p;
-                auto dist2 = sqrLength(d);
 
-                if (dist2 <= SHADOW_EPSILON) 
+                float dist2 = sqrLength(d);
+
+                if (dist2 == 0.f) 
                 {
                     *pdf = 0.f;
-                    return SampledSpectrum(0.f);
+                    return Color();
                 }
-                
 
                 *wi = normalize(d);
-                float cosThetaLight = std::abs(dot(pShape.n, -*wi));
-                
-                if (cosThetaLight < EPSILON_6) 
-                { 
-                    *pdf = 0.f; return SampledSpectrum(0.f); 
-                }
-
-                *pdf *= dist2 / cosThetaLight;
                 *vis = VisibilityTester(ref, pShape);
 
-                return L(pShape, -*wi, lambdas);
+                return L(pShape, -*wi);
             }
+
+            
     };
 };
 

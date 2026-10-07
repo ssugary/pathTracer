@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <random>
-;
+
 
 class RNG 
 {
@@ -44,5 +44,6 @@ class RNG
             gen.seed(sequenceIndex);
         }
 };
+
 
 #endif //< RANDOM_NUMBER_GENERATOR_HPP

@@ -77,6 +77,8 @@ namespace Cam
         
           void addSample(const Point2& p, const Color& color, float sampleW=1.0)
           {
+            if (!std::isfinite(color.r) || !std::isfinite(color.g) || !std::isfinite(color.b))
+              return;
             Point2 pFilmDiscrete = p - Vec2(0.5f, 0.5f);
             Point2i p0 = static_cast<Point2i>(ceil(pFilmDiscrete - filter->radius));
             Point2i p1 = static_cast<Point2i>(floor(pFilmDiscrete + filter->radius));
@@ -122,12 +124,6 @@ namespace Cam
                 finalColor.g = std::max(0.f, finalColor.g);
                 finalColor.b = std::max(0.f, finalColor.b);
 
-                // float maxColor = std::max({finalColor.r, finalColor.g, finalColor.b});
-                // float scale = 1.0f / (maxColor + 1.0f);
-
-                // finalColor.r *= scale;
-                // finalColor.g *= scale;
-                // finalColor.b *= scale;
                 
                 colorBuffer.push_back(finalColor);
               }

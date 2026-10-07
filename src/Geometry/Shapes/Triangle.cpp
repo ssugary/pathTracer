@@ -4,9 +4,9 @@
 namespace Geo
 {
 
-    Triangle::Triangle(bool reverseOrientation, bool tSwapHandedness, 
+    Triangle::Triangle(bool reverseOrientation, bool tSwapHandedness, bool backfaceCull,
                      const std::shared_ptr<TriangleMesh> &mesh, int triNumber)
-                     : Shape(reverseOrientation, tSwapHandedness), mesh(mesh)
+                     : Shape(reverseOrientation, tSwapHandedness), mesh(mesh), backfaceCull(backfaceCull)
     {
         v = &mesh->vertexIndices[3 * triNumber];
     }
@@ -25,9 +25,12 @@ namespace Geo
         Vec3 C = cross(v20, d);
         float det = dot(v10, C);
 
-        if (tSwapHandedness) 
-            if (det > -EPSILON_8) 
+        if (backfaceCull) 
+        {
+            bool cull = tSwapHandedness ? (det < EPSILON_8) : (det > -EPSILON_8);
+            if (cull) 
                 return false;
+        }
 
         if (std::abs(det) < EPSILON_8) 
             return false;
@@ -74,20 +77,44 @@ namespace Geo
                 Normal3 n2 = mesh->n[v[2]];
                 
                 sf->n = normalize(n0 * (1.0 - U - V) + n1 * U + n2 * V);
-            
             }
             else 
                 sf->n = static_cast<Normal3>(normalize(cross(v10, v20)));
+            
             
             Point2 uv[3];
             getUVs(uv);
 
             sf->uv = uv[0] * (1.f - U - V) + uv[1] * U + uv[2] * V;
 
-            if (reverseOrientation ^ tSwapHandedness) 
+            if (reverseOrientation ^ backfaceCull) 
                 sf->n = -sf->n;
             
+            sf->shading.n = sf->n;
 
+            Vec3 dp1 = p1 - p0;
+            Vec3 dp2 = p2 - p0;
+            float du1 = uv[1].x - uv[0].x;
+            float dv1 = uv[1].y - uv[0].y;
+            float du2 = uv[2].x - uv[0].x;
+            float dv2 = uv[2].y - uv[0].y;
+            float det = du1 * dv2 - dv1 * du2;
+
+            Vec3 dpdu;
+            Vec3 dpdv;
+            if (std::abs(det) < EPSILON_8) 
+                coordinateSystem(static_cast<Vec3>(sf->n), &dpdu, &dpdv); 
+            else 
+            {
+                dpdu = ( dv2 * dp1 - dv1 * dp2) / det;
+                dpdv = (-du2 * dp1 + du1 * dp2) / det;
+            }
+
+            sf->dpdu = dpdu;
+            sf->dpdv = dpdv;
+
+            sf->shading.dpdu = sf->dpdu;
+            sf->shading.dpdv = sf->dpdv;
         }
         
         return true;
@@ -109,9 +136,12 @@ namespace Geo
 
         float det = dot(v10, C);
 
-        if (tSwapHandedness) 
-            if (det > -EPSILON_8) 
+        if (backfaceCull) 
+        {
+            bool cull = tSwapHandedness ? (det < EPSILON_8) : (det > -EPSILON_8);
+            if (cull) 
                 return false;
+        }
             
         if (std::abs(det) < EPSILON_8 ) 
             return false;
@@ -164,7 +194,7 @@ namespace Geo
             it.n = normalize(static_cast<Normal3>(cross(p1 - p0, p2 - p0)));
         }
 
-        if (reverseOrientation ^ tSwapHandedness)
+        if (reverseOrientation ^ backfaceCull)
             it.n = -it.n;
 
         *pdf = 1.0f / area(); 

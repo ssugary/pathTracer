@@ -6,11 +6,15 @@
 #include "Geometry/Backgrounds/InterpoledBackground.hpp"
 #include "Geometry/Primitives/PrimitiveList.hpp"
 #include "Geometry/Backgrounds/SingleColorBackground.hpp"
+#include "Geometry/Backgrounds/ImageBackground.hpp"
 #include "Geometry/Primitives/TransformedPrimitive.hpp"
 #include "Geometry/Shapes/Plane.hpp"
 #include "Geometry/Shapes/Sphere.hpp"
 #include "Geometry/Shapes/Cylinder.hpp"
 #include "Integrators/NormalMapIntegrator.hpp"
+#include "Geometry/Textures/TextureMap.hpp"
+#include "Geometry/Textures/MipMap.hpp"
+#include "Geometry/Textures/Texture.hpp"
 #include "Integrators/RayCastIntegrator.hpp"
 #include "Integrators/SimplePathIntegrator.hpp"
 #include "Light/AmbientLight.hpp"
@@ -18,24 +22,25 @@
 #include "Light/PointLight.hpp"
 #include "Materials/BlinnPhongMaterial.hpp"
 #include "Materials/FlatMaterial.hpp"
+#include "Materials/PBRMaterial.hpp"
 #include "Utils/MeshLoader.hpp"
-#include "Utils/Spectrum/OtherSpectrum.hpp"
-#include "Utils/Spectrum/XYZ.hpp"
 #include "Cameras/Film.hpp"
 #include "Filter/BoxFilter.hpp"
 #include "Geometry/Transformation/Transform.hpp"
 #include "Sampler/Sampler.hpp"
 #include "Sampler/PixelSampler.hpp"
 #include "Sampler/StratifiedSampler.hpp"
+#include "Sampler/GlobalSampler.hpp"
+#include "Sampler/HaltonSampler.hpp"
 #include "Integrators/Integrator.hpp"
 #include "Integrators/BlinnPhongIntegrator.hpp"
 #include "MsgSystem/error.hpp"
-#include <Cameras/SphericalCamera.hpp>
-#include <Filter/GaussianFilter.hpp>
-#include <Filter/TriangleFilter.hpp>
-#include <Geometry/Backgrounds/ImageBackground.hpp>
-#include <Light/SpotLight.hpp>
+#include "Cameras/SphericalCamera.hpp"
+#include "Filter/GaussianFilter.hpp"
+#include "Filter/TriangleFilter.hpp"
+#include "Light/SpotLight.hpp"
 #include "Light/DiffuseAreaLight.hpp"
+#include "Light/EnvironmentLight.hpp"
 #include <memory>
 
 namespace ssrt 
@@ -127,7 +132,19 @@ namespace ssrt
             if(!ssrt::loadImgBackground(filename, data, &w, &h))
                 ERROR("Error on loading file " + filename + " !");
             
-            renderOpt->background = std::make_shared<ImageBackground>(data, w, h);
+            std::shared_ptr<unsigned char> imgData(
+                data, [](unsigned char* d) 
+                { 
+                    if (d) 
+                        stbi_image_free(d); 
+                    
+                }
+            );
+
+            renderOpt->background = std::make_shared<ImageBackground>(imgData, w, h);
+
+            renderOpt->envLight = std::make_shared<EnvironmentLight>(imgData, w, h, Color(1.f));
+             renderOpt->light_sources.push_back(renderOpt->envLight);
         }
         else 
             ERROR("Invalid Background Type: " + bgType + " !");
@@ -175,6 +192,165 @@ namespace ssrt
         std::string type = ps.retrieve<std::string>("type", "bvh");
         renderOpt->aggregator = (type == "list") ? AggregateType::LIST : AggregateType::BVH;
     }
+
+    void API::makeNamedTexture(const ParamSet& ps)
+    {
+        if (apiState != ApiState::WORLD_BLOCK && apiState != ApiState::INSTANCE_BLOCK) 
+            return;
+
+        std::string name = ps.retrieve<std::string>("name", "");
+        std::string type = ps.retrieve<std::string>("type", "default");
+        std::string mapType = ps.retrieve<std::string>("mapping", "uv");
+        std::string data_type = ps.retrieve<std::string>("data_type", "color");
+
+        std::unique_ptr<TextureMapping2D> mapping;
+    
+        if (mapType == "uv") 
+        {
+            float su = ps.retrieve<float>("su", 1.f);
+            float sv = ps.retrieve<float>("sv", 1.f);
+            mapping = std::make_unique<UVMapping2D>(su, sv, 0.f, 0.f);
+        } 
+        else if (mapType == "spherical") 
+            mapping = std::make_unique<SphericalMapping2D>(*currentTM);
+
+
+        if(data_type == "color")
+        {
+
+            std::shared_ptr<Texture<Color>> texture;
+    
+            if(type == "image")
+            {
+                std::string filename = ps.retrieve<std::string>("filename", "");
+                int w{0}, h{0};
+                Color* data{nullptr};
+                if(!ssrt::loadImgTexture(filename, data, &w, &h))
+                    ERROR("Error on loading file " + filename + " !");
+                
+                std::string mode = ps.retrieve<std::string>("mode", "black");
+            
+                WrapMode m;
+    
+                if(mode == "black")
+                    m = WrapMode::BLACK;
+                else if(mode == "clamp")
+                    m = WrapMode::CLAMP;
+                else 
+                    m = WrapMode::REPEAT;
+
+                std::string trilinear = ps.retrieve<std::string>("trilinear", "false");
+                bool doTrilinear{false};
+
+                if(trilinear == "true" || trilinear == "yes")
+                    doTrilinear = true;
+
+                float maxAnisotropy = ps.retrieve<float>("max_anisotropy", 0.f);
+                
+                
+                std::shared_ptr<MIPMap<Color>> mipmap = std::make_shared<MIPMap<Color>>(Point2i(w, h), data, m, doTrilinear, maxAnisotropy);
+
+                delete[] data;
+                texture = std::make_shared<ImageTexture<Color>>(std::move(mapping), mipmap);
+            }
+            else if (type == "constant") 
+            {
+                Color val = ps.retrieve<Color>("value", Color(1.f));
+                texture = std::make_shared<ConstantTexture<Color>>(val);
+            }
+            else if(type == "bilinear" || type == "bilerp")
+            {
+                Color bl = ps.retrieve<Color>("bl", Color(0, 0, 0));
+                Color tl = ps.retrieve<Color>("tl", Color(1, 1, 1));
+                Color tr = ps.retrieve<Color>("tr", Color(1, 1, 1));
+                Color br = ps.retrieve<Color>("br", Color(0, 0, 0));
+
+                texture = std::make_shared<BilerpTexture<Color>>(std::move(mapping), bl, tl, tr, br);
+
+            }
+
+            if (currentGS.texture_lib && texture) 
+                (*currentGS.texture_lib)[name] = texture;
+        }
+        else if(data_type == "float")
+        {
+            std::shared_ptr<Texture<float>> texture;
+        
+            if (type == "constant") 
+            {
+                Color val = ps.retrieve<Color>("value", Color(1.f));
+                texture = std::make_shared<ConstantTexture<float>>(val[0]);
+            }
+            else if(type == "image")
+            {
+                std::string filename = ps.retrieve<std::string>("filename", "");
+                int w, h;
+                float* data{nullptr};
+                if(ssrt::loadImgTexture(filename, data, &w, &h))
+                    ERROR("Error on loading file " + filename + " !");
+                
+                std::string mode = ps.retrieve<std::string>("mode", "black");
+            
+                WrapMode m;
+    
+                if(mode == "black")
+                    m = WrapMode::BLACK;
+                else if(mode == "clamp")
+                    m = WrapMode::CLAMP;
+                else 
+                    m = WrapMode::REPEAT;
+
+                std::string trilinear = ps.retrieve<std::string>("trilinear", "false");
+                bool doTrilinear{false};
+
+                if(trilinear == "true" || trilinear == "yes")
+                    doTrilinear = true;
+
+                float maxAnisotropy = ps.retrieve<float>("max_anisotropy", 0.f);
+            
+                std::shared_ptr<MIPMap<float>> mipmap = std::make_shared<MIPMap<float>>(Point2i(w, h), std::move(data), m, doTrilinear, maxAnisotropy);
+                
+                delete[] data;
+
+                texture = std::make_shared<ImageTexture<float>>(std::move(mapping), mipmap);
+            }
+            else if(type == "bilinear" || type == "bilerp")
+            {
+                Color bl = ps.retrieve<Color>("bl", Color(0, 0, 0));
+                Color tl = ps.retrieve<Color>("tl", Color(1, 1, 1));
+                Color tr = ps.retrieve<Color>("tr", Color(1, 1, 1));
+                Color br = ps.retrieve<Color>("br", Color(0, 0, 0));
+
+                texture = std::make_shared<BilerpTexture<float>>(std::move(mapping), bl[0], tl[0], tr[0], br[0]);
+
+            }
+            if (currentGS.float_texture_lib && texture) 
+                (*currentGS.float_texture_lib)[name] = texture;
+        }
+
+    }
+    void API::namedTexture(const ParamSet& ps)
+    {
+        if (apiState != ApiState::WORLD_BLOCK && apiState != ApiState::INSTANCE_BLOCK) 
+            return;
+        std::string name = ps.retrieve<std::string>("name", "");
+        if (currentGS.texture_lib->count(name)) 
+        {
+            currentGS.curr_color_texture = (*currentGS.texture_lib)[name];
+            currentGS.curr_float_texture = nullptr;
+        } 
+        else if(currentGS.float_texture_lib->count(name))
+        {
+            currentGS.curr_float_texture = (*currentGS.float_texture_lib)[name];
+            currentGS.curr_color_texture = nullptr;
+        }
+        else 
+        {
+            ERROR("Named material '" + name + "' not founded.\n");
+        }
+
+        
+    }
     void API::worldBegin(const ParamSet&) 
     {
         if (!checkState(ApiState::SETUP_BLOCK, "world_begin")) 
@@ -186,7 +362,8 @@ namespace ssrt
         currentGS = GraphicsState();
         currentGS.mats_lib = std::make_shared<std::unordered_map<std::string, std::shared_ptr<Material>>>();
         currentGS.emitter_lib = std::make_shared<std::unordered_map<std::string, std::shared_ptr<AreaLight>>>();
-
+        currentGS.float_texture_lib  = std::make_shared<std::unordered_map<std::string, std::shared_ptr<Texture<float>>>>();
+        currentGS.texture_lib = std::make_shared<std::unordered_map<std::string, std::shared_ptr<Texture<Color>>>>();
         while (!savedTM.empty()) 
             savedTM.pop();
         while (!savedGS.empty()) 
@@ -385,6 +562,13 @@ namespace ssrt
 
                 sampler = std::make_shared<StratifiedSampler>(x_samples, y_samples, jt, nSampledDimensions);
             }
+            else if(type == "halton")
+            {
+                spp = samplerPs.retrieve<int>("samples_per_pixel", 1);
+
+                Bounds2i sampleBounds(Point2i(0, 0), renderOpt->camera->film->fullRes);
+                sampler = std::make_shared<HaltonSampler>(spp, sampleBounds);
+            }
         }
         else 
             {
@@ -448,6 +632,8 @@ namespace ssrt
             renderOpt->background,
             renderOpt->light_sources
         );
+        renderOpt->scene->lights.envLight = renderOpt->envLight;
+
         if (renderOpt->integrator && renderOpt->scene) 
         {
             std::cout << "[API] Iniciando Renderização...\n";
@@ -523,29 +709,96 @@ namespace ssrt
         std::shared_ptr<Material> mat;
         if(type == "blinn_phong" || type == "blinn")
         {
-            auto kd_rgb = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
-            auto ks_rgb= ps.retrieve<Color>("ks", Color(0.0, 0.0, 0.0));
-            auto ka_rgb= ps.retrieve<Color>("ka", Color(0.0, 0.0, 0.0));
-            auto mirror_rgb = ps.retrieve<Color>("mirror", Color(0.0, 0.0, 0.0));
+            auto kd = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
+            auto ks= ps.retrieve<Color>("ks", Color(0.0, 0.0, 0.0));
+            auto ka= ps.retrieve<Color>("ka", Color(0.0, 0.0, 0.0));
+            auto mirror = ps.retrieve<Color>("mirror", Color(0.0, 0.0, 0.0));
             auto glossiness= ps.retrieve<float>("glossiness", 0);
-
-            auto kd = std::make_shared<RGBAlbedoSpectrum>(kd_rgb);
-            auto ks = std::make_shared<RGBAlbedoSpectrum>(ks_rgb);
-            auto ka = std::make_shared<RGBAlbedoSpectrum>(ka_rgb);
-            auto mirror = std::make_shared<RGBAlbedoSpectrum>(mirror_rgb);
 
             mat = std::make_shared<BlinnPhongMaterial>(kd, ks, ka, glossiness, mirror);
         }
         else if(type == "flat")
         {
-            auto color_rgb = ps.retrieve<Color>("color", {0.f});
-            auto mirror_rgb = ps.retrieve<Color>("mirror", {0.f});
+            auto color = ps.retrieve<Color>("color", {0.f});
+            auto mirror = ps.retrieve<Color>("mirror", {0.f});
 
-            auto color = std::make_shared<RGBAlbedoSpectrum>(color_rgb);
-            auto mirror = std::make_shared<RGBAlbedoSpectrum>(mirror_rgb);
+
             mat = std::make_shared<FlatMaterial>(color, mirror);
         }
+        else if (type == "pbr" || type == "pbrmaterial" || type == "pbr_material")
+        {
+            std::shared_ptr<Texture<Color>> kd_texture;
+            std::shared_ptr<Texture<Color>> k_texture;
+            std::shared_ptr<Texture<Color>> eta_texture;
+            std::shared_ptr<Texture<float>> roughness_texture;
+            std::shared_ptr<Texture<float>> ior_texture;
 
+            std::string kd_tex = ps.retrieve<std::string>("kd_texture", "");
+
+            if (!kd_tex.empty() && currentGS.texture_lib->count(kd_tex)) 
+                kd_texture = (*currentGS.texture_lib)[kd_tex];
+            else 
+            {
+                Color kd_val = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
+                kd_texture = std::make_shared<Geo::ConstantTexture<Color>>(kd_val);
+            }
+
+            std::string k_tex = ps.retrieve<std::string>("k_texture", "");
+
+            if (!k_tex.empty() && currentGS.texture_lib->count(k_tex)) 
+                k_texture = (*currentGS.texture_lib)[k_tex];
+            else 
+            {
+                Color k_val = ps.retrieve<Color>("k", Color(1.0, 0.0, 1.0));
+                k_texture = std::make_shared<Geo::ConstantTexture<Color>>(k_val);
+            }
+            std::string eta_tex = ps.retrieve<std::string>("eta_texture", "");
+
+            if (!eta_tex.empty() && currentGS.texture_lib->count(eta_tex)) 
+                eta_texture = (*currentGS.texture_lib)[eta_tex];
+            else 
+            {
+                Color eta_val = ps.retrieve<Color>("eta", Color(1.0, 0.0, 1.0));
+                eta_texture = std::make_shared<Geo::ConstantTexture<Color>>(eta_val);
+            }
+            std::string roughness_tex = ps.retrieve<std::string>("roughness_texture", "");
+
+            if (!roughness_tex.empty() && currentGS.float_texture_lib->count(roughness_tex)) 
+                roughness_texture = (*currentGS.float_texture_lib)[roughness_tex];
+            else 
+            {
+                float roughness_val = ps.retrieve<float>("roughness", 1.f);
+                roughness_texture = std::make_shared<Geo::ConstantTexture<float>>(roughness_val);
+            }
+            std::string ior_tex = ps.retrieve<std::string>("ior_texture", "");
+
+            if (!ior_tex.empty() && currentGS.float_texture_lib->count(ior_tex)) 
+                ior_texture = (*currentGS.float_texture_lib)[ior_tex];
+            else 
+            {
+                float ior_val = ps.retrieve<float>("ior", 1.f);
+                ior_texture = std::make_shared<Geo::ConstantTexture<float>>(ior_val);
+            }
+
+            auto mirror = ps.retrieve<Color>("mirror", Color(0.0f));
+            std::string matTypeStr = ps.retrieve<std::string>("mat_type", "matte");
+            MatType matType = MatType::MATTE;
+
+            if(matTypeStr == "dielectric") 
+                matType = MatType::DIELECTRIC;
+            else if(matTypeStr == "conductor") 
+                matType = MatType::CONDUCTOR;
+
+            auto normal_map = ps.retrieve<std::string>("normal_map", "");
+
+            std::shared_ptr<Texture<Color>> tex_normal = nullptr;
+
+            if(!normal_map.empty() && currentGS.texture_lib->count(normal_map))
+                tex_normal = currentGS.texture_lib->at(normal_map);
+            
+            mat = std::make_shared<PBRMaterial>(kd_texture, eta_texture, k_texture, roughness_texture, ior_texture, matType, tex_normal, mirror);
+        }
+ 
         currentGS.curr_material = mat;
     }
 
@@ -561,32 +814,101 @@ namespace ssrt
 
         std::string type = ps.retrieve<std::string>("type", "blinn_phong");
         std::shared_ptr<Material> mat;
+
         if(type == "blinn_phong" || type == "blinn")
         {
-            auto kd_rgb = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
-            auto ks_rgb= ps.retrieve<Color>("ks", Color(0.0, 0.0, 0.0));
-            auto ka_rgb= ps.retrieve<Color>("ka", Color(0.0, 0.0, 0.0));
-            auto mirror_rgb = ps.retrieve<Color>("mirror", Color(0.0, 0.0, 0.0));
+            auto kd = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
+            auto ks= ps.retrieve<Color>("ks", Color(0.0, 0.0, 0.0));
+            auto ka= ps.retrieve<Color>("ka", Color(0.0, 0.0, 0.0));
+            auto mirror = ps.retrieve<Color>("mirror", Color(0.0, 0.0, 0.0));
             auto glossiness= ps.retrieve<float>("glossiness", 0);
 
-            auto kd = std::make_shared<RGBAlbedoSpectrum>(kd_rgb);
-            auto ks = std::make_shared<RGBAlbedoSpectrum>(ks_rgb);
-            auto ka = std::make_shared<RGBAlbedoSpectrum>(ka_rgb);
-            auto mirror = std::make_shared<RGBAlbedoSpectrum>(mirror_rgb);
+            // auto kd = std::make_shared<RGBAlbedoSpectrum>(kd_rgb);
+            // auto ks = std::make_shared<RGBAlbedoSpectrum>(ks_rgb);
+            // auto ka = std::make_shared<RGBAlbedoSpectrum>(ka_rgb);
+            // auto mirror = std::make_shared<RGBAlbedoSpectrum>(mirror_rgb);
 
             mat = std::make_shared<BlinnPhongMaterial>(kd, ks, ka, glossiness, mirror);
         }
         else if(type == "flat")
         {
-            auto color_rgb = ps.retrieve<Color>("color", {0.f});
-            auto mirror_rgb = ps.retrieve<Color>("mirror", {0.f});
-
-            auto color = std::make_shared<RGBAlbedoSpectrum>(color_rgb);
-            auto mirror = std::make_shared<RGBAlbedoSpectrum>(mirror_rgb);
+            auto color = ps.retrieve<Color>("color", {0.f});
+            auto mirror = ps.retrieve<Color>("mirror", {0.f});
 
             mat = std::make_shared<FlatMaterial>(color, mirror);
         }
+        else if (type == "pbr" || type == "pbrmaterial" || type == "pbr_material")
+        {
 
+            std::shared_ptr<Texture<Color>> kd_texture;
+            std::shared_ptr<Texture<Color>> k_texture;
+            std::shared_ptr<Texture<Color>> eta_texture;
+            std::shared_ptr<Texture<float>> roughness_texture;
+            std::shared_ptr<Texture<float>> ior_texture;
+
+            std::string kd_tex = ps.retrieve<std::string>("kd_texture", "");
+
+            if (!kd_tex.empty() && currentGS.texture_lib->count(kd_tex)) 
+                kd_texture = (*currentGS.texture_lib)[kd_tex];
+            else 
+            {
+                Color kd_val = ps.retrieve<Color>("kd", Color(1.0, 0.0, 1.0));
+                kd_texture = std::make_shared<Geo::ConstantTexture<Color>>(kd_val);
+            }
+
+            std::string k_tex = ps.retrieve<std::string>("k_texture", "");
+
+            if (!k_tex.empty() && currentGS.texture_lib->count(k_tex)) 
+                k_texture = (*currentGS.texture_lib)[k_tex];
+            else 
+            {
+                Color k_val = ps.retrieve<Color>("k", Color(1.0, 0.0, 1.0));
+                k_texture = std::make_shared<Geo::ConstantTexture<Color>>(k_val);
+            }
+            std::string eta_tex = ps.retrieve<std::string>("eta_texture", "");
+
+            if (!eta_tex.empty() && currentGS.texture_lib->count(eta_tex)) 
+                eta_texture = (*currentGS.texture_lib)[eta_tex];
+            else 
+            {
+                Color eta_val = ps.retrieve<Color>("eta", Color(1.0, 0.0, 1.0));
+                eta_texture = std::make_shared<Geo::ConstantTexture<Color>>(eta_val);
+            }
+            std::string roughness_tex = ps.retrieve<std::string>("roughness_texture", "");
+
+            if (!roughness_tex.empty() && currentGS.float_texture_lib->count(roughness_tex)) 
+                roughness_texture = (*currentGS.float_texture_lib)[roughness_tex];
+            else 
+            {
+                float roughness_val = ps.retrieve<float>("roughness", 1.f);
+                roughness_texture = std::make_shared<Geo::ConstantTexture<float>>(roughness_val);
+            }
+            std::string ior_tex = ps.retrieve<std::string>("ior_texture", "");
+
+            if (!ior_tex.empty() && currentGS.float_texture_lib->count(ior_tex)) 
+                ior_texture = (*currentGS.float_texture_lib)[ior_tex];
+            else 
+            {
+                float ior_val = ps.retrieve<float>("ior", 1.f);
+                ior_texture = std::make_shared<Geo::ConstantTexture<float>>(ior_val);
+            }
+
+            auto mirror = ps.retrieve<Color>("mirror", Color(0.0f));
+
+            std::string matTypeStr = ps.retrieve<std::string>("mat_type", "matte");
+            MatType matType = MatType::MATTE;
+
+            if(matTypeStr == "dielectric") 
+                matType = MatType::DIELECTRIC;
+            else if(matTypeStr == "conductor") 
+                matType = MatType::CONDUCTOR;
+
+            auto normal_map = ps.retrieve<std::string>("normal_map", "");
+            if(normal_map.empty())
+                mat = std::make_shared<PBRMaterial>(kd_texture, eta_texture, k_texture, roughness_texture, ior_texture, matType, currentGS.curr_color_texture, mirror);
+            else  
+                mat = std::make_shared<PBRMaterial>(kd_texture, eta_texture, k_texture, roughness_texture, ior_texture, matType, currentGS.texture_lib->at(normal_map), mirror);
+        }
         if (currentGS.mats_lib) 
             (*currentGS.mats_lib)[name] = mat;
         
@@ -619,11 +941,10 @@ namespace ssrt
         std::shared_ptr<Primitive> localPrimitive = nullptr;
         std::shared_ptr<Primitive> newPrimitive = nullptr;
         std::shared_ptr<AreaLight> base_emitter = currentGS.curr_emitter;
+
         if (!currentGS.curr_material) 
-        {
             ERROR("No declared material");
-        }
-     
+        
 
         if(type == "sphere")
         {
@@ -695,9 +1016,11 @@ namespace ssrt
         else if (type == "triangle_mesh" || type == "trianglemesh")
         {
             std::string rev_order_str = ps.retrieve<std::string>("reverse_vertex_order", "false");
+            std::string swap_hand_str      = ps.retrieve<std::string>("swap_handedness", "false");
             std::string cull_str      = ps.retrieve<std::string>("backface_cull", "false");
             bool reverse_order        = (rev_order_str == "true");
-            bool swap_handedness      = (cull_str == "true");
+            bool backface_cull        = (cull_str == "true");
+            bool swap_handedness      = (swap_hand_str == "true");
             auto o2w = cacheTransform(*currentTM);
             auto w2o = cacheTransform(Transform::inverse(*currentTM));
             std::string filename = ps.retrieve<std::string>("filename", "");
@@ -706,7 +1029,7 @@ namespace ssrt
             
             if (!filename.empty()) 
             {
-                auto triangles = loadOBJ(filename, reverse_order, swap_handedness);
+                auto triangles = loadOBJ(filename, reverse_order, swap_handedness, backface_cull);
                 for (auto& tri : triangles) 
                 {
                     std::shared_ptr<AreaLight> localEmitter = nullptr;
@@ -716,7 +1039,9 @@ namespace ssrt
                         localEmitter->O2W = o2w;
                         localEmitter->W2O = w2o;
                     }
-                    meshPrimitives.push_back(std::make_shared<GeometricPrimitive>(tri, currentGS.curr_material, localEmitter));
+
+                    auto geoPrim = std::make_shared<GeometricPrimitive>(tri, currentGS.curr_material, localEmitter);
+                    meshPrimitives.push_back(std::make_shared<TransformedPrimitive>(o2w.get(), w2o.get(), geoPrim));
                 }
             }
             else 
@@ -748,7 +1073,7 @@ namespace ssrt
 
                     for (int i = 0; i < ntriangles; ++i) 
                     {
-                        auto tri = std::make_shared<Triangle>(reverse_order, swap_handedness, mesh, i);
+                        auto tri = std::make_shared<Triangle>(reverse_order, swap_handedness, backface_cull, mesh, i);
                         std::shared_ptr<AreaLight> localEmitter = nullptr;
                         if(base_emitter) 
                         {
@@ -757,15 +1082,14 @@ namespace ssrt
                             localEmitter->O2W = o2w;
                             localEmitter->W2O = w2o;
                         }
-                        meshPrimitives.push_back(std::make_shared<GeometricPrimitive>(tri, currentGS.curr_material, localEmitter));
+                        auto geoPrim = std::make_shared<GeometricPrimitive>(tri, currentGS.curr_material, localEmitter);
+                        meshPrimitives.push_back(std::make_shared<TransformedPrimitive>(o2w.get(), w2o.get(), geoPrim));
                     }
                 }
             }
             if (!meshPrimitives.empty()) 
-                {
-                    auto bvh = std::make_shared<BVHAccel>(meshPrimitives, 4);
-                    newPrimitive = std::make_shared<TransformedPrimitive>(o2w.get(), w2o.get(), bvh);
-                }
+                    newPrimitive = std::make_shared<BVHAccel>(meshPrimitives, 4);
+                
             }
             
         if (newPrimitive) 
@@ -790,11 +1114,8 @@ namespace ssrt
 
         std::string type = ps.retrieve<std::string>("type", "point");
         std::shared_ptr<Light> light = nullptr;
-        auto scale_rgb = ps.retrieve<Color>("s", {0, 0, 0});
-        auto intensity_rgb = ps.retrieve<Color>("i", {0, 0, 0});
-
-        auto scale = std::make_shared<RGBIlluminationSpectrum>(scale_rgb);
-        auto intensity = std::make_shared<RGBIlluminationSpectrum>(intensity_rgb);
+        auto scale = ps.retrieve<Color>("s", {0, 0, 0});
+        auto intensity = ps.retrieve<Color>("i", {0, 0, 0});
 
         if(type == "ambient")
         {
@@ -848,11 +1169,9 @@ namespace ssrt
 
         if(type == "diffuse" || type == "diff")
         {
-            auto scale_rgb = ps.retrieve<Color>("s", {0, 0, 0});
-            auto intensity_rgb = ps.retrieve<Color>("i", {0, 0, 0});
+            auto scale = ps.retrieve<Color>("s", {0, 0, 0});
+            auto intensity = ps.retrieve<Color>("i", {0, 0, 0});
 
-            auto scale = std::make_shared<RGBIlluminationSpectrum>(scale_rgb);
-            auto intensity = std::make_shared<RGBIlluminationSpectrum>(intensity_rgb);
             auto two_sided = ps.retrieve<std::string>("two_sided", "false");
             bool ts = false;
             if(two_sided == "yes" || two_sided == "true")
@@ -879,11 +1198,9 @@ namespace ssrt
 
         if(type == "diffuse")
         {
-            auto scale_rgb = ps.retrieve<Color>("s", {0, 0, 0});
-            auto intensity_rgb = ps.retrieve<Color>("i", {0, 0, 0});
+            auto scale = ps.retrieve<Color>("s", {0, 0, 0});
+            auto intensity = ps.retrieve<Color>("i", {0, 0, 0});
 
-            auto scale = std::make_shared<RGBIlluminationSpectrum>(scale_rgb);
-            auto intensity = std::make_shared<RGBIlluminationSpectrum>(intensity_rgb);
             auto two_sided = ps.retrieve<std::string>("two_sided", "false");
             bool ts = false;
             if(two_sided == "yes" || two_sided == "true")

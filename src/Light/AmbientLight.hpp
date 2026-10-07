@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef AMBIENT_LIGHT_HPP
 #define AMBIENT_LIGHT_HPP
 
@@ -10,23 +8,22 @@ namespace Luz
     {
         public:
 
-            AmbientLight(std::shared_ptr<Spectrum> intensity, std::shared_ptr<Spectrum> scale) 
+            AmbientLight(const Color& intensity, const Color& scale) 
             : Light(intensity, scale)
             {
                 flag = LightFlag::AMBIENT;
             }
-            SampledSpectrum sampleLi(const Geo::Interaction&, 
+            Color sampleLi(const Geo::Interaction&, 
                                     const Point2&, 
-                                    const ssrt::SampledWavelengths& lambdas,
                                     Vec3* wi, float* pdf, VisibilityTester*) const override
             {
                 *wi = {0, 0, 0};
                 *pdf = 1.0f;
-
-                SampledSpectrum I = intensity->sample(lambdas);
-                SampledSpectrum S = scale->sample(lambdas);
-
-                return I * S;
+                return intensity * scale;
+            }
+            float pdf(const Geo::Interaction&, const Vec3&) const override
+            {
+                return 0.f;
             }
     };
 };

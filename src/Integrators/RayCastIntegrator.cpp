@@ -1,11 +1,12 @@
 #include "RayCastIntegrator.hpp"
+#include "Materials/FlatMaterial.hpp"
 #include "Geometry/Interactions/SurfaceInteraction.hpp"
 
 
 namespace Itg 
 {
-    std::optional<SampledSpectrum> RayCastIntegrator::li(const Ray& ray, const Scene& scene, Sam::Sampler&, ssrt::SampledWavelengths lambdas) const {
-
+    std::optional<Color> RayCastIntegrator::li(const RayDifferential& ray, const Scene& scene, Sam::Sampler&) const 
+    {
         SurfaceInteraction isect;
 
         if(!scene.intersect(ray, &isect))
@@ -14,11 +15,9 @@ namespace Itg
         if (dot(ray.d, isect.n) > 0) 
            isect.n = -isect.n;
 
-        auto kd = isect.primitive->getMaterial()->kd();
-        if (kd)
-            return kd->sample(lambdas);
-            
-        return ssrt::SampledSpectrum(0.f);
-    }
+        auto fm = std::dynamic_pointer_cast<Mat::FlatMaterial>(isect.primitive->getMaterial());
+
+        return fm->kd();
+     }
 
 };

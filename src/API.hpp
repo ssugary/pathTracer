@@ -27,6 +27,8 @@ namespace Geo
   class Transform;
   struct TransformHash;
   class Scene;
+  template <typename T>
+  class Texture;
 }
 namespace Prim 
 {
@@ -65,14 +67,19 @@ namespace ssrt {
   {
     std::shared_ptr<AreaLight> curr_emitter;
     std::shared_ptr<Material> curr_material;  //!< Current material that globally affects all objects.
+    std::shared_ptr<Texture<Color>> curr_color_texture;
+    std::shared_ptr<Texture<float>> curr_float_texture;
     std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Material>>> mats_lib;      //!< Library of materials.
     std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<AreaLight>>> emitter_lib;
+    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Texture<Color>>>> texture_lib;
+    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Texture<float>>>> float_texture_lib;
     bool flip_normals{false};                 //!< When true, we flip the normals
     bool mats_lib_cloned{false};
   };
   struct RenderOptions 
   {
     std::shared_ptr<Background> background;
+    std::shared_ptr<Light> envLight;
     std::shared_ptr<Camera> camera;
     std::unique_ptr<Integrator> integrator;
     std::unique_ptr<Scene> scene;
@@ -143,6 +150,8 @@ namespace ssrt {
         static void emitter(const ParamSet&);
         static void makeNamedEmitter(const ParamSet&);
         static void namedEmitter(const ParamSet&);
+        static void makeNamedTexture(const ParamSet&);
+        static void namedTexture(const ParamSet&);
         static std::shared_ptr<const Transform> cacheTransform(const Transform& t);
   };
 }; // namespace ssrt
