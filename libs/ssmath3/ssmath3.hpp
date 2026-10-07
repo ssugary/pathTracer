@@ -543,7 +543,9 @@ namespace ssmath3
     constexpr Vector<T, 4>::Vector(const Normal<T, 4>& n) noexcept : x(n.x), y(n.y), z(n.z), w(n.w) {};
     template<typename T>
     constexpr Vector<T, 4>::Vector(const Vector<T, 3>& v) noexcept : x(v.x), y(v.y), z(v.z), w(static_cast<T>(0)) {};
-
+    template<typename T>
+    template<typename U>
+    constexpr Vector<T, 4>::Vector(const Vector<U, 4>&  v) noexcept : x(U(v.x)), y(U(v.y)), z(U(v.z)), w(U(v.w)) {};
     template<typename T>
     constexpr Point<T, 4> operator+(const Vector<T, 4>& v, const Point<T, 4>& p) noexcept
     {
@@ -879,7 +881,9 @@ namespace ssmath3
     constexpr Point<T, 4>::Point(const Vector<T, 4>& v) noexcept : x(v.x), y(v.y), z(v.z), w(v.w) {};
     template<typename T>
     constexpr Point<T, 4>::Point(const Normal<T, 4>& n) noexcept : x(n.x), y(n.y), z(n.z), w(n.w) {};
-
+    template<typename T>
+    template<typename U>
+    constexpr Point<T, 4>::Point(const Point<U, 4>&  p) noexcept : x(U(p.x)), y(U(p.y)), z(U(p.z)), w(U(p.w)) {};
 
     template<typename T>
     constexpr Vector<T, 4> Point<T, 4>::operator-(const Point<T, 4>& p) const noexcept

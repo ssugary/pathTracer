@@ -265,7 +265,7 @@ namespace ssmath3
         union 
         {
             __extension__ struct {T x, y, z, w;};
-            __extension__ struct {T r, g, b, a;};
+            __extension__ struct {T t, r, theta, phi;};
         };
 
         constexpr Point() noexcept : x(), y(), z(), w() {}
@@ -275,6 +275,8 @@ namespace ssmath3
         constexpr explicit Point(const Point<T, 3>&) noexcept;
         constexpr explicit Point(const Vector<T, 4>&)noexcept;
         constexpr explicit Point(const Normal<T, 4>&)noexcept;
+        template<typename U>
+        constexpr explicit Point(const Point<U, 4>&  p) noexcept;
 
         constexpr const T& operator[](const std::size_t i) const noexcept
         {

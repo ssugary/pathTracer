@@ -6,7 +6,7 @@
 
 namespace Geo 
 {
-    class SpaceTimeInteraction;
+    struct SpaceTimeInteraction;
 }
 
 namespace Prim 

@@ -17,10 +17,10 @@ namespace Geo
       float L;
       float Q;
 
-      GeodesicRay(const Point4& x, const Vec4& p, float lambda=0.f, float E=0.f, float L=0.f, float Q=0.f)
-      : x(x), p(p), lambda(lambda), E(E), L(L), Q(Q) {};
+      GeodesicRay(const Point4& x, const Vec4& p, float lambda=0.f, float Q=0.f)
+      : x(x), p(p), lambda(lambda), E(-p.t), L(p.phi), Q(Q) {};
 
-      
+
     };
 
 } // namespace Geo

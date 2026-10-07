@@ -7,7 +7,7 @@
 namespace Geo
 {
 
-    class SchwarzchildMetric : Metric
+    class SchwarzchildMetric : public Metric
     {
       private:
         float M;
@@ -17,9 +17,11 @@ namespace Geo
       
         PhaseSpaceDerivatives evaluate(const Point4& x, const Vec4& p) const override;
         float eventHorizonRadius() const override; 
-        bool isInsideHorizon(const Point4& x) const override;
         float getMass() const override;
-            
+        bool isInsideHorizon(const Point4& x) const override;
+        Mat4 g(const Point4& x) const override;
+        Point3 toCartesian(const Point4& x) const override;
+        
     };
 
 } // namespace Geo

@@ -4,7 +4,7 @@
 namespace Cam 
 {
 
-    Ray SphericalCamera::generateRay(/*const CameraSample&*/ int x, int y) const
+    Ray SphericalCamera::generateRay(/*const CameraSample&*/ float x, float y) const
     {
         Point2 uv{x/static_cast<float>(film->fullRes[0]), y/static_cast<float>(film->fullRes[1])};
         Vec3 dir;
@@ -27,7 +27,7 @@ namespace Cam
         std::swap(dir.y, dir.z);
         return (*C2W)(Ray(Point3(0.f), dir));
     }
-    RayDifferential SphericalCamera::generateRayDifferential(/*const CameraSample&*/int x, int y) const
+    RayDifferential SphericalCamera::generateRayDifferential(/*const CameraSample&*/float x, float y) const
     {
         Point2 uv{x/static_cast<float>(film->fullRes[0]), y/static_cast<float>(film->fullRes[1])};
         Vec3 dir;

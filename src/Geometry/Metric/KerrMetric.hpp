@@ -23,6 +23,8 @@ namespace Geo
         bool isInsideHorizon(const Point4& x) const override;
         float getSpin() const override;
         float getMass() const override;
+        Mat4 g(const Point4& x) const override;
+        Point3 toCartesian(const Point4& x) const override;
         
             
     };

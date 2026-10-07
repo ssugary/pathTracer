@@ -27,8 +27,8 @@ namespace Cam
             : medium(std::move(medium)), C2W(std::move(cameraToWorld)), shutterOpen(shutterOpen), shutterClose(shutterClose), film(std::move(film)) {};
             
             ~Camera() = default;
-            virtual Ray generateRay(/*const CameraSample&*/ int x, int y) const = 0;
-            virtual RayDifferential generateRayDifferential(/*const CameraSample&*/int x, int y) const = 0;
+            virtual Ray generateRay(/*const CameraSample&*/ float x, float y) const = 0;
+            virtual RayDifferential generateRayDifferential(/*const CameraSample&*/float x, float y) const = 0;
             
             std::unique_ptr<Film> film;
     };

@@ -21,6 +21,9 @@ namespace Geo
             virtual PhaseSpaceDerivatives evaluate(const Point4& x, const Vec4& p) const = 0;
             virtual float eventHorizonRadius() const = 0;
             virtual bool isInsideHorizon(const Point4& x) const = 0;
+            virtual Mat4 g(const Point4&) const = 0;
+            virtual Point3 toCartesian(const Point4&) const = 0;
+            virtual float hamiltonian(const Point4& x, const Vec4& p) const;
             virtual float getSpin() const;
             virtual float getMass() const;
             

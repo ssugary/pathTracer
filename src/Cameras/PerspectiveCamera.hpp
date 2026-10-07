@@ -30,8 +30,8 @@ namespace Cam
                                 dy = R2C(Point3(0, 1, 0)) - R2C(Point3(0, 0, 0));
                               };
           
-        virtual Ray generateRay(/*const CameraSample&*/ int x, int y) const override;
-        virtual RayDifferential generateRayDifferential(/*const CameraSample&*/int x, int y) const override;
+        virtual Ray generateRay(/*const CameraSample&*/ float x, float y) const override;
+        virtual RayDifferential generateRayDifferential(/*const CameraSample&*/float x, float y) const override;
 
    };
 

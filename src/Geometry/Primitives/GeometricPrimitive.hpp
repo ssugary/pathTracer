@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Geometry/Metric/Metric.hpp>
 #ifndef GEOMETRIC_PRIMITIVE_HPP
 #define GEOMETRIC_PRIMITIVE_HPP
 
@@ -36,12 +37,12 @@ namespace Prim
         private:
             
             std::shared_ptr<Primitive> prim3D;
-            Point4 centerSpaceTime;
-            float spin;
+            const Geo::Metric& metric;
+            Vec4 velocity;
 
         public:
 
-            GeometricRelativisticPrimitive(std::shared_ptr<Primitive> prim3D, const Point4& center, float spin);
+            GeometricRelativisticPrimitive(std::shared_ptr<Primitive> prim3D, const Geo::Metric& metric, const Vec4& velocity = {1.f, 0.f, 0.f, 0.f});
             bool intersect(const GeodesicStep&, SpaceTimeInteraction*) const override;
             bool intersectP(const GeodesicStep&) const override;
 

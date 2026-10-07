@@ -12,7 +12,7 @@ namespace Geo
 
             RK4Solver();
             
-            StepResult step(const GeodesicRay& ray, std::shared_ptr<Metric> metric, float dl) const override;
+            StepResult step(const GeodesicRay& ray, const Metric& metric, float dl) const override;
 
     };
 

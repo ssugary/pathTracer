@@ -8,26 +8,72 @@ namespace Geo
   RK4Solver::RK4Solver() 
   : GeodesicSolver() {};
 
-  StepResult RK4Solver::step(const GeodesicRay& ray, std::shared_ptr<Metric> metric, float dl) const
+  StepResult RK4Solver::step(const GeodesicRay& ray, const Metric& metric, float dll) const
   {
-    PhaseSpaceDerivatives k1 = metric->evaluate(ray.x, ray.p);
+    double dl = double(dll);
 
-    Point4 x2 = ray.x + 0.5f * dl * k1.dxdl;
-    Vec4   p2 = ray.p + 0.5f * dl * k1.dpdl;
-    PhaseSpaceDerivatives k2 = metric->evaluate(x2, p2);
+    Point4d x = Point4d(ray.x);
+    Vec4d p = Vec4d(ray.p);
 
-    Point4 x3 = ray.x + 0.5f * dl * k2.dxdl;
-    Vec4   p3 = ray.p + 0.5f * dl * k2.dpdl;
-    PhaseSpaceDerivatives k3 = metric->evaluate(x3, p3);
+    PhaseSpaceDerivatives k1f = metric.evaluate(Point4(x), Vec4(p));
+    Vec4d k1_dxdl = Vec4d(k1f.dxdl);
+    Vec4d k1_dpdl = Vec4d(k1f.dpdl);
 
-    Point4 x4 = ray.x + dl * k3.dxdl;
-    Vec4   p4 = ray.p + dl * k3.dpdl;
-    PhaseSpaceDerivatives k4 = metric->evaluate(x4, p4);
+    Point4d x2 = x + 0.5 * dl * k1_dxdl;
+    Vec4d   p2 = p + 0.5 * dl * k1_dpdl;
+    PhaseSpaceDerivatives k2f = metric.evaluate(Point4(x2), Vec4(p2));
+    Vec4d k2_dxdl = Vec4d(k2f.dxdl);
+    Vec4d k2_dpdl = Vec4d(k2f.dpdl);
 
-    Point4 nextX = ray.x + (dl / 6.f) * (k1.dxdl + 2.f * k2.dxdl + 2.f * k3.dxdl + k4.dxdl);
-    Vec4   nextP = ray.p + (dl / 6.f) * (k1.dpdl + 2.f * k2.dpdl + 2.f * k3.dpdl + k4.dpdl);
+    Point4d x3 = x + 0.5 * dl * k2_dxdl;
+    Vec4d   p3 = p + 0.5 * dl * k2_dpdl;
+    PhaseSpaceDerivatives k3f = metric.evaluate(Point4(x3), Vec4(p3));
+    Vec4d k3_dxdl = Vec4d(k3f.dxdl);
+    Vec4d k3_dpdl = Vec4d(k3f.dpdl);
 
-    return {GeodesicRay(nextX, nextP), 0.f};
+    Point4d x4 = x + dl * k3_dxdl;
+    Vec4d   p4 = p + dl * k3_dpdl;
+    PhaseSpaceDerivatives k4f = metric.evaluate(Point4(x4), Vec4(p4));
+    Vec4d k4_dxdl = Vec4d(k4f.dxdl);
+    Vec4d k4_dpdl = Vec4d(k4f.dpdl);
+
+    Point4d nextXd = x + (dl / 6.) * (k1_dxdl + 2. * k2_dxdl + 2. * k3_dxdl + k4_dxdl);
+    Vec4d   nextPd = p + (dl / 6.) * (k1_dpdl + 2. * k2_dpdl + 2. * k3_dpdl + k4_dpdl);
+
+    double theta   = nextXd.theta;
+    double phi     = nextXd.phi;
+    double p_theta = nextPd.theta;
+
+    while (theta < 0. || theta > M_PI) 
+    {
+        if (theta < 0.) 
+        {
+            theta = -theta;
+            phi += M_PI;
+            p_theta = -p_theta;
+        } 
+        else if (theta > M_PI) 
+        {
+            theta = 2. * M_PI - theta;
+            phi += M_PI;
+            p_theta = -p_theta;
+        }
+    }
+
+    nextXd.theta = theta;
+    nextXd.phi = phi; 
+    nextPd.theta = p_theta;
+
+    Point4 nextX = Point4(nextXd);
+    Vec4   nextP = Vec4(nextPd);
+
+    float nextLambda = ray.lambda + dl;
+
+    float r = static_cast<float>(nextXd.r);
+    float recommendedNextStep = std::max(1e-4f, 0.01f * r);
+
+
+    return { GeodesicRay(nextX, nextP, nextLambda, ray.Q), recommendedNextStep };
   }
 
   

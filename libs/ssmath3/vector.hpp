@@ -265,13 +265,16 @@ namespace ssmath3
         union 
         {
             __extension__ struct {T x, y, z, w;};
-            __extension__ struct {T r, g, b, a;};
+            __extension__ struct {T t, r, theta, phi;};
         };
 
         constexpr Vector() noexcept : x(), y(), z(), w() {}
         constexpr Vector(T k) noexcept : x(k), y(k), z(k), w(k) {};
         constexpr Vector(T x, T y, T z, T w) noexcept : x(x), y(y), z(z), w(w){};
         constexpr Vector(const Vector<T, 4>& v) noexcept : x(v.x), y(v.y), z(v.z), w(v.w) {};
+
+        template<typename U>
+        constexpr explicit Vector(const Vector<U, 4>&  p) noexcept;
 
         constexpr explicit Vector(const Point<T, 4> &) noexcept;
         constexpr explicit Vector(const Normal<T, 4>&) noexcept;

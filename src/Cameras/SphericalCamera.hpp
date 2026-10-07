@@ -26,8 +26,8 @@ namespace Cam
                             : Camera(film, medium, cameraToWorld, shutterOpen, shutterClose), map(map)
                             {};
 
-            Ray generateRay(/*const CameraSample&*/ int x, int y) const override;
-            RayDifferential generateRayDifferential(/*const CameraSample&*/int x, int y) const override;
+            Ray generateRay(/*const CameraSample&*/ float x, float y) const override;
+            RayDifferential generateRayDifferential(/*const CameraSample&*/float x, float y) const override;
             
 
     };

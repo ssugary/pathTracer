@@ -4,6 +4,7 @@
 
 #include <Cameras/ProjectiveCamera.hpp>
 #include "Geometry/Rays/GeodesicRay.hpp"
+#include "Geometry/Metric/Metric.hpp"
 
 
 namespace Cam  
@@ -15,6 +16,7 @@ namespace Cam
 
           Point4 pos;
           Transform tetrad;
+          const std::shared_ptr<Geo::Metric> metric;
 
         public:
           RelativisticCamera(const Transform* CameraToWorld,
@@ -27,12 +29,12 @@ namespace Cam
                              float lensR, 
                              float focalD,
                              const Point4& pos4D, 
-                             const Transform& tetrad);
+                            std::shared_ptr<Geo::Metric> metric);
 
  
-        Ray generateRay(int x, int y) const override;
-        RayDifferential generateRayDifferential(int x, int y) const override;
-        virtual GeodesicRay generateGeodesicRay(int x, int y) const;
+        Ray generateRay(float x, float y) const override;
+        RayDifferential generateRayDifferential(float x, float y) const override;
+        virtual GeodesicRay generateGeodesicRay(float x, float y) const;
         
             
     };

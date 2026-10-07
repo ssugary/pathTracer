@@ -20,7 +20,7 @@ namespace Geo
         public:
 
           virtual ~GeodesicSolver() = default;
-          virtual StepResult step(const GeodesicRay& ray, std::shared_ptr<Metric> metric, float dl) const = 0;
+          virtual StepResult step(const GeodesicRay& ray, const Metric& metric, float dl) const = 0;
 
     };
 

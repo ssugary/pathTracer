@@ -5,7 +5,7 @@
 namespace Cam 
 {
 
-    Ray OrthographicCamera::generateRay(/*const CameraSample&*/ int x, int y) const 
+    Ray OrthographicCamera::generateRay(/*const CameraSample&*/ float x, float y) const 
     {
         Point3 p(x + 0.5f, y + 0.5f, 0.f);
         Point3 pCam = R2C(p);
@@ -17,7 +17,7 @@ namespace Cam
 
 
     }
-    RayDifferential OrthographicCamera::generateRayDifferential(/*const CameraSample&*/int x, int y) const 
+    RayDifferential OrthographicCamera::generateRayDifferential(/*const CameraSample&*/float x, float y) const 
     {
         Point3 p(x + 0.5f, y + 0.5f, 0.f);
         Point3 camPos = R2C(p);

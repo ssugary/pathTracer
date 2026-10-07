@@ -1,6 +1,6 @@
 #pragma once
-#ifndef _INTEGRATOR_HPP
-#define _INTEGRATOR_HPP
+#ifndef RELATIVISTIC_INTEGRATOR_HPP
+#define RELATIVISTIC_INTEGRATOR_HPP
 
 #include "Sampler/Sampler.hpp"
 #include "Integrators/Integrator.hpp"
@@ -11,29 +11,52 @@
 
 namespace Itg 
 {
+    
 
     class RelativisticIntegrator : public Integrator
     {
         private:
-          
-          std::shared_ptr<Cam::RelativisticCamera> cam;
-          std::shared_ptr<Sam::Sampler> sampler;
-          std::shared_ptr<Geo::Metric> metric;
 
-          int maxSteps{2000};
-          const float rEscape{30.f};
-          const float dLambda{0.05f};
+            enum class HitType 
+            {
+                CAPTURED,
+                ESCAPED,
+                DISK,
+                MAX_STEPS
+            };
 
-          const RK4Solver solver;
+            struct HitResult 
+            {
+                HitType type{HitType::CAPTURED};
+                Color L{0.f};
+                Vec3 escapeDir{0.f, 1.f, 0.f};
+            };
+            
+            
+            std::shared_ptr<Cam::RelativisticCamera> cam;
+            std::shared_ptr<Sam::Sampler> sampler;
+            std::shared_ptr<Geo::Metric> metric;
+            std::unique_ptr<Geo::GeodesicSolver> solver;
+            int maxSteps{5000};
+            float rEscape{1000.f};
+            float dLambda{0.05f};
+            float rDiskOut{25.f};
 
-          float computeRedshift(const GeodesicRay& ray, float rDisk) const;
+            float computeIscoRadius() const;
+            float computeRedshift(const GeodesicRay& ray, float rDisk) const;
+            Vec3 computeEscapeDirection(const Point4& x, const PhaseSpaceDerivatives& derivs) const;
 
         public:
-            RelativisticIntegrator(std::shared_ptr<Cam::RelativisticCamera> cam, std::shared_ptr<Sam::Sampler> sampler, std::shared_ptr<Metric> metric, int maxSteps, float rEscape, float dLambda);
+
+            RelativisticIntegrator(std::shared_ptr<Cam::RelativisticCamera> cam,
+                                   std::shared_ptr<Sam::Sampler> sampler, 
+                                   std::shared_ptr<Metric> metric, 
+                                   std::unique_ptr<Geo::GeodesicSolver> solver,
+                                   int maxSteps=5000, float rEscape=1000.f, float dLambda=0.05f, float rDiskOut=25.f);
 
             void render(const Scene& scene) override;
 
-            virtual std::optional<Color> li(const GeodesicRay& ray, const Scene& scene, Sam::Sampler& sampler) const;
+            virtual HitResult li(const GeodesicRay& ray, const Scene& scene, Sam::Sampler& sampler) const;
             virtual void preprocess(const Scene&);
 
     };
